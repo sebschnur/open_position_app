@@ -11,9 +11,17 @@ abhaengen.
 import datetime as dt
 from typing import Optional
 
+from src.domain.validation import DIRECTION_PARTNER_BUYS, DIRECTION_PARTNER_SELLS
+
 STATUS_PLANNED = "geplant"
 STATUS_DUE = "fällig"
 STATUS_DONE = "erledigt"
+
+# UI-Texte je Richtung (siehe 01_fachliche_funktionen.md, Abschnitt 6.2).
+DIRECTION_LABELS = {
+    DIRECTION_PARTNER_BUYS: "Partner kauft",
+    DIRECTION_PARTNER_SELLS: "Partner verkauft",
+}
 
 
 def _resolve_today(today: Optional[dt.date]) -> dt.date:
