@@ -11,6 +11,7 @@ import datetime as dt
 from sqlalchemy.orm import Session
 
 from src.config import PRICE_PRODUCT_ORDER_TABLE
+from src.db import default_mock_values as _defaults
 from src.db.models import (
     AppMetadata,
     IntradayTrade,
@@ -24,17 +25,6 @@ from src.db.models import (
 )
 
 SOURCE_LABEL = "default_mock"
-
-_BASE_MARKET_PRICE = {1: 85.00, 2: 79.50, 3: 76.20}
-_PEAK_MARKET_PRICE = {1: 95.50, 2: 89.30, 3: 85.00}
-_BASE_OTC_SURCHARGE = {1: 0.40, 2: 0.50, 3: 0.60}
-_PEAK_OTC_SURCHARGE = {1: 0.65, 2: 0.75, 3: 0.85}
-_BASE_SETTLEMENT_PRICE = {1: 84.80, 2: 79.10, 3: 75.90}
-_PEAK_SETTLEMENT_PRICE = {1: 95.00, 2: 88.90, 3: 84.70}
-_BASE_PFC_MEAN = {1: 85.10, 2: 79.60, 3: 76.30}
-
-# Y0 (aktuelles Jahr) bis Y+4: plausible Netto-Positionen in MWh.
-_PORTFOLIO_POSITION_BY_OFFSET = {0: 15000.0, 1: -8000.0, 2: 4000.0, 3: -2000.0, 4: 0.0}
 
 
 def _offset_from_label(label: str) -> int:
@@ -59,7 +49,7 @@ def seed_default_mock_data(session: Session) -> None:
 
 
 def _seed_portfolio_positions(session: Session, current_year: int, today: dt.date) -> None:
-    for offset, position_mwh in _PORTFOLIO_POSITION_BY_OFFSET.items():
+    for offset, position_mwh in _defaults.PORTFOLIO_POSITION_BY_OFFSET.items():
         session.add(
             PortfolioPosition(
                 as_of_date=today,
@@ -93,8 +83,12 @@ def _seed_prices_and_surcharges(session: Session, current_year: int, now: dt.dat
     for product_type, year_label in PRICE_PRODUCT_ORDER_TABLE:
         offset = _offset_from_label(year_label)
         delivery_year = current_year + offset
-        price = (_BASE_MARKET_PRICE if product_type == "Base" else _PEAK_MARKET_PRICE)[offset]
-        surcharge = (_BASE_OTC_SURCHARGE if product_type == "Base" else _PEAK_OTC_SURCHARGE)[offset]
+        price = (
+            _defaults.BASE_MARKET_PRICE if product_type == "Base" else _defaults.PEAK_MARKET_PRICE
+        )[offset]
+        surcharge = (
+            _defaults.BASE_OTC_SURCHARGE if product_type == "Base" else _defaults.PEAK_OTC_SURCHARGE
+        )[offset]
         session.add(
             MarketPrice(
                 product_type=product_type,
@@ -120,7 +114,9 @@ def _seed_settlement_prices(
         offset = _offset_from_label(year_label)
         delivery_year = current_year + offset
         price = (
-            _BASE_SETTLEMENT_PRICE if product_type == "Base" else _PEAK_SETTLEMENT_PRICE
+            _defaults.BASE_SETTLEMENT_PRICE
+            if product_type == "Base"
+            else _defaults.PEAK_SETTLEMENT_PRICE
         )[offset]
         session.add(
             SettlementPrice(
@@ -136,7 +132,7 @@ def _seed_settlement_prices(
 def _seed_pfc_checks(session: Session, current_year: int, today: dt.date) -> None:
     # PFC-Pruefung bezieht sich im Prototyp nur auf Base Y+1 bis Y+3.
     pfc_timestamp = dt.datetime.combine(today, dt.time.min)
-    for offset, mean_value in _BASE_PFC_MEAN.items():
+    for offset, mean_value in _defaults.BASE_PFC_MEAN.items():
         session.add(
             PfcCheck(
                 product_type="Base",

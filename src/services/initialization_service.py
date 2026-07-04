@@ -13,13 +13,13 @@ from sqlalchemy.orm import Session
 from src.config import DB_BACKUP_PATH, DB_PATH
 from src.db.database import SessionLocal
 from src.db.init_db import init_db
-from src.db.models import AppMetadata
 from src.db.seed_default_mock_data import seed_default_mock_data
+from src.repositories.metadata_repository import get_metadata, upsert_metadata
 
 
 def is_database_seeded(session: Session) -> bool:
     """Prueft anhand von app_metadata, ob die DB bereits initial befuellt wurde."""
-    flag = session.get(AppMetadata, "db_initialized")
+    flag = get_metadata(session, "db_initialized")
     return flag is not None and flag.value == "true"
 
 
@@ -38,14 +38,7 @@ def _record_backup_timestamp() -> None:
     """Vermerkt den Zeitpunkt der Backup-Erzeugung in app_metadata."""
     with SessionLocal() as session:
         now = dt.datetime.utcnow()
-        entry = session.get(AppMetadata, "initial_backup_created_at")
-        if entry is None:
-            session.add(
-                AppMetadata(key="initial_backup_created_at", value=now.isoformat(), updated_at=now)
-            )
-        else:
-            entry.value = now.isoformat()
-            entry.updated_at = now
+        upsert_metadata(session, "initial_backup_created_at", now.isoformat(), now)
         session.commit()
 
 
