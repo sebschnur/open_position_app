@@ -11,7 +11,7 @@ nur die reinen Rechenregeln.
 from src.config import POSITION_LIMIT_MW
 
 STATUS_WITHIN_LIMIT = "innerhalb Limit"
-STATUS_LIMIT_BREACHED = "Limit ueberschritten"
+STATUS_LIMIT_BREACHED = "Limit überschritten"
 
 
 def simulated_position_mw(pms_position_mw: float, intraday_position_mw: float) -> float:

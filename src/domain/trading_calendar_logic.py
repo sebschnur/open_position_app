@@ -12,7 +12,7 @@ import datetime as dt
 from typing import Optional
 
 STATUS_PLANNED = "geplant"
-STATUS_DUE = "faellig"
+STATUS_DUE = "fällig"
 STATUS_DONE = "erledigt"
 
 

@@ -4,8 +4,10 @@ import pytest
 
 from src.domain.quantity_utils import (
     INTERPRETATION_BUYS,
+    INTERPRETATION_MIXED,
     INTERPRETATION_NONE,
     INTERPRETATION_SELLS,
+    interpret_quantities,
     interpret_quantity,
     mwh_to_mw,
     round_mw,
@@ -38,6 +40,22 @@ def test_mwh_to_mw_negative_keeps_sign():
 )
 def test_interpret_quantity(quantity, expected):
     assert interpret_quantity(quantity) == expected
+
+
+@pytest.mark.parametrize(
+    "quantities, expected",
+    [
+        ([0, 5000, 0, 3000, 0], INTERPRETATION_BUYS),
+        ([0, -5000, 0, -3000, 0], INTERPRETATION_SELLS),
+        ([0, 0, 0, 0, 0], INTERPRETATION_NONE),
+        # Regressionsfall: +5000 in Y1 und -5000 in Y2 duerfen sich NICHT zu
+        # "Keine Menge" aufheben - beide Jahre haben echte Positionswirkung.
+        ([0, 5000, -5000, 0, 0], INTERPRETATION_MIXED),
+        ([0, 8760, -100, 0, 0], INTERPRETATION_MIXED),
+    ],
+)
+def test_interpret_quantities_across_years(quantities, expected):
+    assert interpret_quantities(quantities) == expected
 
 
 def test_round_price_two_decimals():
