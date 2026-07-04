@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Datenbank (wird lokal erzeugt, nicht versionieren)
+data/app.db
+data/app_initial_backup.db
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
