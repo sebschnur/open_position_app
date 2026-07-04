@@ -1,10 +1,20 @@
-"""CLI: DB mit Default-Mockdaten befuellen (Platzhalter).
+"""CLI: Datenbank mit Default-Mockdaten befuellen und initiales Backup erzeugen.
 
 Aufruf:  python scripts/seed_default_mock_data.py
-Umsetzung in Arbeitspaket 2. Befuellt eine leere DB mit plausiblen Defaults und
-erzeugt anschliessend data/app_initial_backup.db.
 """
 
-# TODO(AP2): Default-Seed und Backup implementieren.
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from src.services.initialization_service import ensure_database_ready  # noqa: E402
+
+
+def main() -> None:
+    status = ensure_database_ready()
+    print(status)
+
+
 if __name__ == "__main__":
-    raise SystemExit("Noch nicht implementiert (Arbeitspaket 2).")
+    main()
