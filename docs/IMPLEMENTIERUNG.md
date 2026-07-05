@@ -12,14 +12,22 @@ Stand des Prototyps nach Abschluss der Arbeitspakete 1-9. Grundlage:
     Hervorhebung bei Überschreitung. Einfügen/Löschen untertägiger Geschäfte.
     Keine Kauf/Verkauf-Richtungsfelder – Richtung nur über das Vorzeichen.
   - **Preise / Vertriebsinfos** – Marktpreise und OTC-Aufschläge gemeinsam
-    pflegen, finaler Preis und Settlement-Differenz, kopierbarer Chat- und
-    Mailtext, PFC-Prüfung (Mittelwert + Zeitstempel).
+    pflegen (Base- und Peak-Block optisch abgesetzt), finaler Preis und
+    Settlement-Differenz, kopierbarer Chat- und Mailtext (werden beim Speichern
+    automatisch erzeugt), PFC-Prüfung (Mittelwert + Zeitstempel).
   - **Limitorder** – Anlegen mit Vorzeichenvalidierung, Triggerprüfung gegen
-    den Marktpreis (nur Hervorhebung), Buttons „Ausgeführt“/„Gelöscht“.
+    den Marktpreis (nur Hervorhebung), Buttons „Ausgeführt“/„Gelöscht“. Kein
+    „Verantwortlicher“-Feld mehr (obsolet); Sortierung nach aktuellstem
+    „gültig bis“.
   - **Handelskalender** – fällige/überfällige Einträge hervorgehoben,
     „Erledigt“ erzeugt ein untertägiges Geschäft.
+- **Nachvollziehbarkeit**: Jeder manuelle Eintrag speichert den aktuellen
+  Benutzernamen (`last_modified_by`, automatisch aus dem OS-Benutzer). Button-
+  Aktionen ersetzen den bisherigen Bearbeiter; Anzeige als Spalte „Geändert von“.
+  Mengen-Spaltenköpfe zeigen konkrete Jahre (2026…2030) statt Y0…Y4.
 - **Datenhaltung**: SQLite über SQLAlchemy, 9 Fachtabellen, DB-Initialisierung,
-  Default-Mockdaten und initiales Backup nach dem Seed.
+  Default-Mockdaten und initiales Backup nach dem Seed. Eine leichte Migration
+  in `init_db()` ergänzt fehlende Spalten (`last_modified_by`) in bestehenden DBs.
 - **Excel-/PFC-Import**: Seed aus `data/mockdaten.xlsm` und `data/pfc/`;
   fehlende Werte werden als klar gekennzeichnete Default-Mockdaten erzeugt.
   Eine bereits befüllte DB wird nicht stillschweigend überschrieben.
@@ -32,7 +40,7 @@ Stand des Prototyps nach Abschluss der Arbeitspakete 1-9. Grundlage:
 - Alle vier Seiten + `app.py` rendern headless fehlerfrei (Streamlit `AppTest`).
 - End-to-End-Seed gegen die echten Excel-/PFC-Dateien füllt alle Tabellen;
   erneuter Import wird korrekt als „bereits initialisiert“ abgewiesen.
-- `pytest`: 110 Tests grün; `src/domain` zu 100 % abgedeckt.
+- `pytest`: 117 Tests grün; `src/domain` zu 100 % abgedeckt.
 - Keine automatische Handelsausführung: untertägige Geschäfte entstehen nur
   über Formular-Submit bzw. die Buttons „Ausgeführt“/„Erledigt“.
 - Kein Reset-Button in der UI. Auf der Position-Seite keine Kauf/Verkauf-
@@ -80,7 +88,11 @@ coverage run --source=src -m pytest && coverage report -m
 
 - Herkunft der **Peak-Settlementpreise**: aktuell Default-Mockwerte, da nicht in
   der Excel-Mockdatei enthalten – bei Produktivnutzung zu klären.
-- **Verantwortliche (Handel/Vertrieb)** für importierte Limitorders fehlen in
-  der Mockdatei und werden mit Platzhaltern befüllt.
+- **Verantwortliche (Handel/Vertrieb)** sind als Eingabefeld obsolet (ersetzt
+  durch `last_modified_by`). Die DB-Spalten bleiben optional erhalten; beim
+  Excel-Import werden sie mangels Quelldaten weiterhin mit Platzhaltern befüllt.
+- Da kein separates Login existiert, ist der „aktuelle Benutzer“ der OS-Benutzer
+  des App-Prozesses. Für Mehrbenutzerbetrieb über einen zentralen Server wäre
+  eine echte Authentifizierung nötig, um einzelne Bearbeiter zu unterscheiden.
 - Migrationspfad **SQLite → PostgreSQL** ist vorbereitet (SQLAlchemy), aber
   noch nicht ausgeführt.

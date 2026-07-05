@@ -6,6 +6,22 @@ SQLite ist im Prototyp die zentrale Mock-Datenschicht. Alle fachlichen Funktione
 
 Ziel ist eine einfache, robuste Struktur, die später prinzipiell auf PostgreSQL migriert werden kann.
 
+### Grundsatz Nachvollziehbarkeit
+
+Jeder manuelle Eintrag ist nachvollziehbar: Tabellen mit manuellen Einträgen
+führen die Spalte `last_modified_by`, in der der aktuelle Benutzername
+gespeichert wird. Der Name wird automatisch aus dem angemeldeten
+Betriebssystem-Benutzer ermittelt (`src/user_context.py`, kein separates
+Login im Prototyp). Wird über einen Button eine Aktion ausgeführt
+(z. B. „Ausgeführt“, „Gelöscht“, „Erledigt“), ersetzt der Benutzername des
+ausführenden Users den bisherigen Wert – auch in den dabei erzeugten
+Folgeeinträgen (untertägige Geschäfte). Betroffen sind: `intraday_trades`,
+`market_prices`, `otc_surcharges`, `limit_orders`, `trading_calendar`.
+
+Die Spalte wird in bestehenden Datenbanken über eine leichte Migration in
+`init_db()` nachträglich ergänzt (`ALTER TABLE ... ADD COLUMN`, Default
+`system` für Altbestand); `create_all()` kann fehlende Spalten nicht nachziehen.
+
 ## 2. Technische Vorgaben
 
 - Datenbank: SQLite
@@ -81,6 +97,7 @@ Speichert untertägige Geschäfte.
 | `quantity_y4_mwh` | Numeric | Menge Y+4 |
 | `source_type` | String | `manual`, `limit_order`, `trading_calendar` |
 | `source_id` | Integer nullable | ID des Ursprungseintrags |
+| `last_modified_by` | String | Benutzer der letzten Änderung (Nachvollziehbarkeit) |
 | `created_at` | DateTime | Erzeugungszeitpunkt |
 
 Es gibt kein Richtungsfeld. Die Richtung ergibt sich aus dem Vorzeichen der Mengen.
@@ -96,6 +113,7 @@ Speichert aktuelle Marktpreise aus Mock-Daten oder manueller Eingabe.
 | `delivery_year` | Integer | Lieferjahr |
 | `price_eur_mwh` | Numeric | Marktpreis |
 | `price_timestamp` | DateTime | Zeitstempel des Preises |
+| `last_modified_by` | String | Benutzer der letzten Änderung (Nachvollziehbarkeit) |
 | `created_at` | DateTime | Erzeugungszeitpunkt |
 | `updated_at` | DateTime | Änderungszeitpunkt |
 
@@ -115,6 +133,7 @@ Speichert OTC-Aufschläge je Handelsprodukt.
 | `product_type` | String | `Base` oder `Peak` |
 | `delivery_year` | Integer | Lieferjahr |
 | `surcharge_eur_mwh` | Numeric | OTC-Aufschlag |
+| `last_modified_by` | String | Benutzer der letzten Änderung (Nachvollziehbarkeit) |
 | `created_at` | DateTime | Erzeugungszeitpunkt |
 | `updated_at` | DateTime | Änderungszeitpunkt |
 
@@ -170,12 +189,20 @@ Speichert Limitorders.
 | `trigger_delivery_year` | Integer | Lieferjahr des Trigger-Preises |
 | `trigger_condition` | String | siehe unten |
 | `limit_price_eur_mwh` | Numeric | Limitpreis |
-| `responsible_trading` | String | Verantwortlicher Handel |
-| `responsible_sales` | String | Verantwortlicher Vertrieb |
+| `responsible_trading` | String nullable | **obsolet**, siehe Hinweis; für Altbestand/Import erhalten |
+| `responsible_sales` | String nullable | **obsolet**, siehe Hinweis; für Altbestand/Import erhalten |
 | `valid_until` | Date nullable | optionales Gültigkeitsdatum |
 | `status` | String | `offen`, `ausgeführt`, `gelöscht`, `abgelaufen` |
+| `last_modified_by` | String | Benutzer der letzten Änderung (Nachvollziehbarkeit) |
 | `created_at` | DateTime | Erzeugungszeitpunkt |
 | `updated_at` | DateTime | Änderungszeitpunkt |
+
+Hinweis: Das frühere Pflichtfeld „Verantwortlicher“ (`responsible_trading` /
+`responsible_sales`) ist obsolet – die Nachvollziehbarkeit erfolgt jetzt
+ausschließlich über `last_modified_by`. Die UI fragt es nicht mehr ab. Die
+Spalten sind nun optional (nullable); der interaktive Anlage-Pfad befüllt sie
+aus Kompatibilität mit bestehenden `NOT NULL`-Datenbanken mit dem aktuellen
+Benutzernamen, der Excel-Import mit Default-Platzhaltern.
 
 ### 11.1 Erlaubte `trigger_condition`-Werte
 
@@ -206,6 +233,7 @@ Speichert geplante Handelskalendereinträge.
 | `quantity_y3_mwh` | Numeric | Menge Y+3 |
 | `quantity_y4_mwh` | Numeric | Menge Y+4 |
 | `status` | String | `geplant`, `fällig`, `erledigt` |
+| `last_modified_by` | String | Benutzer der letzten Änderung (Nachvollziehbarkeit) |
 | `created_at` | DateTime | Erzeugungszeitpunkt |
 | `updated_at` | DateTime | Änderungszeitpunkt |
 

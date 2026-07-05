@@ -28,3 +28,24 @@
 - Neue Datei `09_codex_review_prompts.md` mit Review-Prompts und Checklisten für Codex ergänzt.
 - Neue Datei `10_agent_workflow.md` mit empfohlenem Implementierungs-/Review-Ablauf ergänzt.
 - `README.md` und `05_umsetzungsplan_codex_claude.md` aktualisiert.
+
+## Ergänzung: Nachvollziehbarkeit, UI-Feinschliff und Preis-Automatik
+
+- **Grundsatz Nachvollziehbarkeit**: Jeder manuelle Eintrag speichert den
+  aktuellen Benutzernamen in der neuen Spalte `last_modified_by`. Der Name wird
+  automatisch aus dem OS-Benutzer ermittelt (`src/user_context.py`). Betroffene
+  Tabellen: `intraday_trades`, `market_prices`, `otc_surcharges`,
+  `limit_orders`, `trading_calendar`.
+- Button-Aktionen (`Ausgeführt`/`Gelöscht`/`Erledigt`) ersetzen den bisherigen
+  Bearbeiter durch den ausführenden User – auch in erzeugten untertägigen
+  Geschäften.
+- Neue Anzeigespalte „Geändert von“ auf Position, Limitorder, Handelskalender.
+- Leichte Migration in `init_db()` ergänzt die Spalte in bestehenden Datenbanken
+  (`ALTER TABLE ... ADD COLUMN`, Default `system`).
+- **Limitorder**: Feld „Verantwortlicher“ entfällt (obsolet); die Spalten
+  `responsible_trading`/`responsible_sales` sind nun optional und bleiben nur
+  für Altbestand/Import erhalten. Offene Limitorders werden nach aktuellstem
+  „gültig bis“ (absteigend) sortiert.
+- Mengen-Spaltenköpfe zeigen konkrete Jahre (z. B. 2026…2030) statt Y0…Y4.
+- **Preise**: breiterer optischer Abstand zwischen Base- und Peak-Block; beim
+  Speichern werden Chat- und Mailtext automatisch neu erzeugt (Buttons bleiben).

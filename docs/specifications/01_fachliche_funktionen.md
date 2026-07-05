@@ -318,11 +318,14 @@ Eine Limitorder enthält:
 - Liefermenge je Jahr in MWh
 - Kunden-/Partner-Alias
 - Limitpreis
-- Verantwortlicher Handel
-- Verantwortlicher Vertrieb
 - Trigger-Preis
 - Auslöseart
 - Status
+
+Hinweis: Das frühere Feld „Verantwortlicher Handel/Vertrieb“ ist obsolet und
+entfällt in der Eingabe. Die Nachvollziehbarkeit erfolgt über den automatisch
+gespeicherten Benutzernamen (`last_modified_by`, siehe
+`02_datenmodell_sqlite.md`, Grundsatz Nachvollziehbarkeit).
 
 ### 11.2 Trigger-Preis
 

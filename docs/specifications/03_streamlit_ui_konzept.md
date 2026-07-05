@@ -95,7 +95,7 @@ Highlighting:
 
 ### 4.4 Untertägige Geschäfte Tabelle
 
-Spalten:
+Spalten (Mengen-Spaltenköpfe als konkrete Jahre, z. B. 2026…2030):
 
 - Datum
 - Partner-Alias
@@ -106,6 +106,7 @@ Spalten:
 - Menge Y4 MWh
 - Interpretation / Positionswirkung
 - Quelle
+- Geändert von (Benutzer der letzten Änderung)
 - Button „Löschen“
 
 ### 4.5 Formular „Neues untertägiges Geschäft“
@@ -181,6 +182,9 @@ Anzeige-Reihenfolge in der Pflegetabelle:
 5. Peak Y+2
 6. Peak Y+3
 
+Der Base- und der Peak-Block sind optisch voneinander abgesetzt: zwischen der
+letzten Base-Zeile und der ersten Peak-Zeile steht ein breiterer Abstand.
+
 Spalten:
 
 - Produkt
@@ -199,6 +203,10 @@ Es gibt keinen getrennten Speichern-Button.
 Button:
 
 - `Preise und Aufschläge speichern`
+
+Beim Speichern werden Chat- und Mailtext automatisch aus den frisch
+gespeicherten Werten neu erzeugt (ohne zusätzlichen Klick). Die Buttons
+`Chattext erzeugen` und `Mailtext erzeugen` bleiben zusätzlich bestehen.
 
 ### 5.5 Chattext
 
@@ -280,13 +288,19 @@ Die Seite zeigt offene Limitorders, prüft sie gegen aktuelle Marktpreise und er
 ### 6.3 Formularfelder
 
 - Kunden-/Partner-Alias
-- Mengen Y0 bis Y+4 in MWh
+- Mengen Y0 bis Y+4 in MWh (Spaltenköpfe als konkrete Jahre, z. B. 2026…2030)
 - Trigger-Preis: Base/Peak + Lieferjahr
 - Auslöseart
 - Limitpreis
-- Verantwortlicher Handel
-- Verantwortlicher Vertrieb
 - optional gültig bis
+
+Das frühere Pflichtfeld „Verantwortlicher“ entfällt (obsolet): Die
+Nachvollziehbarkeit erfolgt über den automatisch gespeicherten Benutzernamen,
+der in der Liste als Spalte „Geändert von“ angezeigt wird (siehe
+`02_datenmodell_sqlite.md`, Grundsatz Nachvollziehbarkeit).
+
+Die Liste der offenen Limitorders ist so sortiert, dass der Eintrag mit dem
+aktuellsten „gültig bis“ oben steht; Einträge ohne Datum stehen am Ende.
 
 ### 6.4 Auslösearten
 
@@ -329,10 +343,13 @@ Button `Ausgeführt`:
 - Mengen = Mengen der Limitorder
 - Quelle = `limit_order`
 - setzt Limitorder-Status auf `ausgeführt`
+- speichert den Benutzernamen des ausführenden Users als `last_modified_by`
+  (an der Limitorder und am erzeugten untertägigen Geschäft)
 
 Button `Gelöscht`:
 
 - setzt Limitorder-Status auf `gelöscht`
+- speichert den Benutzernamen des ausführenden Users als `last_modified_by`
 
 ## 7. Seite „Handelskalender“
 
@@ -361,6 +378,9 @@ Die Standardansicht zeigt:
 - Einträge ab heute
 - zusätzlich überfällige, nicht erledigte Einträge
 - keine erledigten Einträge
+
+Die Tabelle führt eine Spalte „Geändert von“ (Benutzer der letzten Änderung);
+die Mengen-Spaltenköpfe werden als konkrete Jahre angezeigt (z. B. 2026…2030).
 
 ### 7.4 Fälligkeitslogik
 
@@ -396,5 +416,7 @@ Beim Klick auf `Erledigt`:
 - Quelle = `trading_calendar`
 - Handelskalendereintrag wird auf `erledigt` gesetzt
 - Position wird automatisch neu berechnet
+- der Benutzername des ausführenden Users wird als `last_modified_by` gespeichert
+  (am Kalendereintrag und am erzeugten untertägigen Geschäft)
 
 Die Datumsregel ist fachlich bestätigt: Für das automatisch erzeugte untertägige Geschäft wird das heutige Datum verwendet.
