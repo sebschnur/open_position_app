@@ -18,8 +18,12 @@ from src.format_utils import format_de
 from src.services.trading_calendar_service import (
     add_calendar_entry,
     get_visible_calendar_rows,
+    mark_deleted,
     mark_done,
 )
+from src.ui_helpers import configure_wide_page
+
+configure_wide_page("Handelskalender")
 
 st.title("Handelskalender")
 
@@ -29,28 +33,28 @@ _DIRECTION_LABEL_TO_KEY = {label: key for key, label in DIRECTION_LABELS.items()
 
 # --- Neuen Kalendereintrag anlegen ------------------------------------------
 
-st.subheader("Neuen Kalendereintrag anlegen")
-st.caption(
-    "Partner kauft: alle befuellten Mengen muessen positiv sein. "
-    "Partner verkauft: alle befuellten Mengen muessen negativ sein."
-)
-
 years = [today.year + offset for offset in range(5)]
 
-with st.form("new_calendar_entry_form", clear_on_submit=True):
-    top_cols = st.columns(2)
-    due_date = top_cols[0].date_input("Datum", value=today)
-    partner_alias = top_cols[1].text_input("Partner-/Kunden-Alias")
+with st.expander("Neuen Kalendereintrag anlegen", expanded=False):
+    st.caption(
+        "Partner kauft: alle befuellten Mengen muessen positiv sein. "
+        "Partner verkauft: alle befuellten Mengen muessen negativ sein."
+    )
 
-    direction_label = st.selectbox("Richtung", list(_DIRECTION_LABEL_TO_KEY.keys()))
+    with st.form("new_calendar_entry_form", clear_on_submit=True):
+        top_cols = st.columns(2)
+        due_date = top_cols[0].date_input("Datum", value=today)
+        partner_alias = top_cols[1].text_input("Partner-/Kunden-Alias")
 
-    qty_cols = st.columns(5)
-    quantities = [
-        col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
-        for col, year in zip(qty_cols, years)
-    ]
+        direction_label = st.selectbox("Richtung", list(_DIRECTION_LABEL_TO_KEY.keys()))
 
-    submitted = st.form_submit_button("Eintrag speichern")
+        qty_cols = st.columns(5)
+        quantities = [
+            col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
+            for col, year in zip(qty_cols, years)
+        ]
+
+        submitted = st.form_submit_button("Eintrag speichern")
 
 if submitted:
     if not partner_alias.strip():
@@ -87,11 +91,11 @@ with SessionLocal() as session:
 if not calendar_rows:
     st.info("Keine offenen Kalendereinträge vorhanden.")
 else:
-    col_widths = [1, 2, 2, 1, 1, 1, 1, 1, 1, 2]
+    col_widths = [1, 2, 2, 1, 1, 1, 1, 1, 1, 2, 2]
     header_cols = st.columns(col_widths)
     for col, header in zip(
         header_cols,
-        ["Datum", "Partner-Alias", "Richtung", "Y0", "Y1", "Y2", "Y3", "Y4", "Status", ""],
+        ["Datum", "Partner-Alias", "Richtung", "Y0", "Y1", "Y2", "Y3", "Y4", "Status", "", ""],
     ):
         col.markdown(f"**{header}**")
 
@@ -109,8 +113,12 @@ else:
             cols[8].markdown(f":red[**{row.display_status}**]")
         else:
             cols[8].write(row.display_status)
-        if cols[9].button("Erledigt", key=f"complete_entry_{row.id}"):
+        if cols[9].button("Ausgeführt", key=f"complete_entry_{row.id}"):
             with SessionLocal() as session:
                 mark_done(session, row.id)
-            st.success("Untertägiges Geschäft erzeugt, Eintrag erledigt.")
+            st.success("Untertägiges Geschäft erzeugt, Eintrag ausgeführt.")
+            st.rerun()
+        if cols[10].button("Löschen", key=f"delete_entry_{row.id}"):
+            with SessionLocal() as session:
+                mark_deleted(session, row.id)
             st.rerun()

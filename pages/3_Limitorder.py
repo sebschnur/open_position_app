@@ -22,6 +22,9 @@ from src.services.limit_order_service import (
     mark_deleted,
     mark_executed,
 )
+from src.ui_helpers import configure_wide_page
+
+configure_wide_page("Limitorder")
 
 st.title("Limitorder")
 
@@ -45,46 +48,46 @@ _CONDITION_LABEL_TO_KEY = {label: key for key, label in TRIGGER_CONDITION_LABELS
 
 # --- Neue Limitorder anlegen ----------------------------------------------
 
-st.subheader("Neue Limitorder anlegen")
-st.caption(
-    "Partner kauft: alle befuellten Mengen muessen positiv sein. "
-    "Partner verkauft: alle befuellten Mengen muessen negativ sein."
-)
-
 years = [current_year + offset for offset in range(5)]
 
-with st.form("new_limit_order_form", clear_on_submit=True):
-    partner_alias = st.text_input("Partner-/Kunden-Alias")
+with st.expander("Neue Limitorder anlegen", expanded=False):
+    st.caption(
+        "Partner kauft: alle befuellten Mengen muessen positiv sein. "
+        "Partner verkauft: alle befuellten Mengen muessen negativ sein."
+    )
 
-    qty_cols = st.columns(5)
-    quantities = [
-        col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
-        for col, year in zip(qty_cols, years)
-    ]
+    with st.form("new_limit_order_form", clear_on_submit=True):
+        partner_alias = st.text_input("Partner-/Kunden-Alias")
 
-    select_cols = st.columns(2)
-    trigger_label = select_cols[0].selectbox("Trigger-Preis", _TRIGGER_LABELS)
-    condition_label = select_cols[1].selectbox("Auslöseart", _CONDITION_LABELS)
+        qty_cols = st.columns(5)
+        quantities = [
+            col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
+            for col, year in zip(qty_cols, years)
+        ]
 
-    limit_price = st.number_input("Limitpreis €/MWh", value=0.0, step=0.01, format="%.2f")
+        select_cols = st.columns(2)
+        trigger_label = select_cols[0].selectbox("Trigger-Preis", _TRIGGER_LABELS)
+        condition_label = select_cols[1].selectbox("Auslöseart", _CONDITION_LABELS)
 
-    resp_cols = st.columns(2)
-    responsible_trading = resp_cols[0].text_input("Verantwortlicher Handel")
-    responsible_sales = resp_cols[1].text_input("Verantwortlicher Vertrieb")
+        limit_price = st.number_input("Limitpreis €/MWh", value=0.0, step=0.01, format="%.2f")
 
-    valid_until = st.date_input("Gültig bis (optional)", value=None)
+        responsible = st.text_input("Verantwortlicher")
 
-    submitted = st.form_submit_button("Limitorder speichern")
+        valid_until = st.date_input("Gültig bis (optional)", value=None)
+
+        submitted = st.form_submit_button("Limitorder speichern")
 
 if submitted:
     if not partner_alias.strip():
         st.error("Partner-/Kunden-Alias darf nicht leer sein.")
-    elif not responsible_trading.strip() or not responsible_sales.strip():
-        st.error("Verantwortlicher Handel und Verantwortlicher Vertrieb dürfen nicht leer sein.")
+    elif not responsible.strip():
+        st.error("Verantwortlicher darf nicht leer sein.")
     else:
         trigger_product_type, trigger_delivery_year = _TRIGGER_LABEL_TO_KEY[trigger_label]
         trigger_condition = _CONDITION_LABEL_TO_KEY[condition_label]
         with SessionLocal() as session:
+            # Ein einziges "Verantwortlicher"-Feld; das Prototyp-Schema hat noch
+            # zwei Spalten, die hier mit demselben Wert befuellt werden.
             errors = add_limit_order(
                 session,
                 partner_alias=partner_alias.strip(),
@@ -97,8 +100,8 @@ if submitted:
                 trigger_delivery_year=trigger_delivery_year,
                 trigger_condition=trigger_condition,
                 limit_price_eur_mwh=limit_price,
-                responsible_trading=responsible_trading.strip(),
-                responsible_sales=responsible_sales.strip(),
+                responsible_trading=responsible.strip(),
+                responsible_sales=responsible.strip(),
                 valid_until=valid_until,
             )
         if errors:
@@ -119,13 +122,14 @@ with SessionLocal() as session:
 if not order_rows:
     st.info("Keine offenen Limitorders vorhanden.")
 else:
-    col_widths = [2, 1, 1, 1, 1, 1, 2, 3, 1, 1, 2, 2, 2]
+    # Auslöseart-Spalte 20% schmaler (3 -> 2.4), dafuer neue Spalte "Gültig bis".
+    col_widths = [2, 1, 1, 1, 1, 1, 2, 2.4, 1, 1, 2, 2, 2, 2]
     header_cols = st.columns(col_widths)
     for col, header in zip(
         header_cols,
         [
             "Partner-Alias", "Y0", "Y1", "Y2", "Y3", "Y4",
-            "Trigger", "Auslöseart", "Limitpreis", "Marktpreis",
+            "Trigger", "Auslöseart", "Marktpreis", "Limitpreis", "Gültig bis",
             "Ausgelöst?", "", "",
         ],
     ):
@@ -141,18 +145,23 @@ else:
         cols[5].write(format_de(order.quantity_y4_mwh, 0))
         cols[6].write(order.trigger_label)
         cols[7].write(order.trigger_condition_label)
-        cols[8].write(format_de(order.limit_price_eur_mwh, 2))
-        cols[9].write(format_de(order.current_market_price_eur_mwh, 2))
-        if order.is_triggered:
-            cols[10].markdown(":red[**Ja**]")
+        cols[8].write(format_de(order.current_market_price_eur_mwh, 2))
+        cols[9].write(format_de(order.limit_price_eur_mwh, 2))
+        if order.valid_until and order.valid_until < today:
+            # Gueltigkeitsdatum liegt in der Vergangenheit (gestern oder aelter).
+            cols[10].markdown(f":red[**{order.valid_until.isoformat()}**]")
         else:
-            cols[10].write("Nein")
-        if cols[11].button("Ausgeführt", key=f"execute_order_{order.id}"):
+            cols[10].write(order.valid_until.isoformat() if order.valid_until else "-")
+        if order.is_triggered:
+            cols[11].markdown(":red[**Ja**]")
+        else:
+            cols[11].write("Nein")
+        if cols[12].button("Ausgeführt", key=f"execute_order_{order.id}"):
             with SessionLocal() as session:
                 mark_executed(session, order.id)
             st.success("Untertägiges Geschäft erzeugt, Limitorder ausgeführt.")
             st.rerun()
-        if cols[12].button("Gelöscht", key=f"delete_order_{order.id}"):
+        if cols[13].button("Gelöscht", key=f"delete_order_{order.id}"):
             with SessionLocal() as session:
                 mark_deleted(session, order.id)
             st.rerun()

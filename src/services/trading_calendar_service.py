@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from src.domain.quantity_utils import round_mwh
 from src.domain.trading_calendar_logic import (
     DIRECTION_LABELS,
+    STATUS_DELETED,
     STATUS_DONE,
     STATUS_DUE,
     is_due,
@@ -143,4 +144,17 @@ def mark_done(session: Session, entry_id: int, today: Optional[dt.date] = None) 
         source_id=entry.id,
     )
     set_status(session, entry_id, STATUS_DONE)
+    session.commit()
+
+
+def mark_deleted(session: Session, entry_id: int) -> None:
+    """Blendet den Kalendereintrag aus, OHNE ein untertaegiges Geschaeft zu erzeugen.
+
+    Wird fuer den "Loeschen"-Button genutzt: der Eintrag wird nicht in die
+    Position uebertragen, sondern nur aus der Standardansicht entfernt.
+    """
+    entry = get_calendar_entry(session, entry_id)
+    if entry is None or entry.status in (STATUS_DONE, STATUS_DELETED):
+        return
+    set_status(session, entry_id, STATUS_DELETED)
     session.commit()

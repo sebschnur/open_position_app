@@ -18,10 +18,10 @@ TRIGGER_PARTNER_SELLS_LT = "partner_sells_price_lt_limit"
 
 # UI-Texte je technischem Wert.
 TRIGGER_CONDITION_LABELS = {
-    TRIGGER_PARTNER_BUYS_GT: "Partner kauft, wenn Preis > Limit",
-    TRIGGER_PARTNER_BUYS_LT: "Partner kauft, wenn Preis < Limit",
-    TRIGGER_PARTNER_SELLS_GT: "Partner verkauft, wenn Preis > Limit",
-    TRIGGER_PARTNER_SELLS_LT: "Partner verkauft, wenn Preis < Limit",
+    TRIGGER_PARTNER_BUYS_GT: "Partner kauft, wenn Marktpreis > Limit",
+    TRIGGER_PARTNER_BUYS_LT: "Partner kauft, wenn Marktpreis < Limit",
+    TRIGGER_PARTNER_SELLS_GT: "Partner verkauft, wenn Marktpreis > Limit",
+    TRIGGER_PARTNER_SELLS_LT: "Partner verkauft, wenn Marktpreis < Limit",
 }
 
 _GREATER_THAN_CONDITIONS = {TRIGGER_PARTNER_BUYS_GT, TRIGGER_PARTNER_SELLS_GT}

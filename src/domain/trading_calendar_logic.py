@@ -16,6 +16,7 @@ from src.domain.validation import DIRECTION_PARTNER_BUYS, DIRECTION_PARTNER_SELL
 STATUS_PLANNED = "geplant"
 STATUS_DUE = "fällig"
 STATUS_DONE = "erledigt"
+STATUS_DELETED = "gelöscht"
 
 # UI-Texte je Richtung (siehe 01_fachliche_funktionen.md, Abschnitt 6.2).
 DIRECTION_LABELS = {
@@ -36,6 +37,6 @@ def is_due(due_date: dt.date, status: str, today: Optional[dt.date] = None) -> b
 def is_visible_in_standard_view(status: str) -> bool:
     """Standardansicht: alle nicht erledigten Eintraege (heutige, kuenftige, ueberfaellige).
 
-    Erledigte Eintraege werden nicht angezeigt.
+    Erledigte und geloeschte Eintraege werden nicht angezeigt.
     """
-    return status != STATUS_DONE
+    return status not in (STATUS_DONE, STATUS_DELETED)

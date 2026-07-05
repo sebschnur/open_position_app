@@ -9,6 +9,7 @@ Die Richtung ergibt sich ausschliesslich aus dem Vorzeichen der Menge
 
 import datetime as dt
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -21,6 +22,9 @@ from src.services.position_service import (
     get_intraday_trade_rows,
     get_position_table,
 )
+from src.ui_helpers import configure_wide_page
+
+configure_wide_page("Position")
 
 st.title("Position")
 
@@ -34,6 +38,39 @@ with SessionLocal() as session:
 # --- Offene Position je Kalenderjahr -----------------------------------
 
 st.subheader("Offene Position je Kalenderjahr")
+
+# Balkendiagramm ueber der Tabelle: simulierte (aktuelle) Position je Jahr in MW,
+# rote gestrichelte Linien markieren das Limit (+/- 1,00 MW, da auf Absolutwert
+# geprueft). Balken werden rot, wenn das Limit verletzt ist.
+if position_rows:
+    limit_mw = position_rows[0].limit_mw
+    chart_df = pd.DataFrame(
+        {
+            "Kalenderjahr": [str(row.year) for row in position_rows],
+            "Position MW": [row.simulated_position_mw for row in position_rows],
+        }
+    )
+    bars = (
+        alt.Chart(chart_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("Kalenderjahr:N", title="Kalenderjahr"),
+            y=alt.Y("Position MW:Q", title="MW"),
+            color=alt.condition(
+                f"abs(datum['Position MW']) > {limit_mw}",
+                alt.value("#d62728"),
+                alt.value("#1f77b4"),
+            ),
+            tooltip=["Kalenderjahr", alt.Tooltip("Position MW:Q", format=".2f")],
+        )
+    )
+    limit_lines = (
+        alt.Chart(pd.DataFrame({"Limit MW": [limit_mw, -limit_mw]}))
+        .mark_rule(color="red", strokeDash=[6, 4])
+        .encode(y="Limit MW:Q")
+    )
+    st.altair_chart((bars + limit_lines).properties(height=280, width="container"))
+    st.caption("Simulierte Position je Kalenderjahr in MW; rote Linie = Limit (±1,00 MW).")
 
 position_df = pd.DataFrame(
     [
@@ -78,57 +115,27 @@ st.dataframe(
     width="stretch",
 )
 
-# --- Untertaegige Geschaefte --------------------------------------------
-
-st.subheader("Untertaegige Geschaefte")
-
-if not trade_rows:
-    st.info("Noch keine untertaegigen Geschaefte erfasst.")
-else:
-    header_cols = st.columns([1, 2, 1, 1, 1, 1, 1, 2, 1, 1])
-    for col, header in zip(
-        header_cols,
-        ["Datum", "Partner-Alias", "Y0", "Y1", "Y2", "Y3", "Y4", "Interpretation", "Quelle", ""],
-    ):
-        col.markdown(f"**{header}**")
-
-    for trade in trade_rows:
-        cols = st.columns([1, 2, 1, 1, 1, 1, 1, 2, 1, 1])
-        cols[0].write(trade.trade_date.isoformat())
-        cols[1].write(trade.partner_alias)
-        cols[2].write(format_de(trade.quantity_y0_mwh, 0))
-        cols[3].write(format_de(trade.quantity_y1_mwh, 0))
-        cols[4].write(format_de(trade.quantity_y2_mwh, 0))
-        cols[5].write(format_de(trade.quantity_y3_mwh, 0))
-        cols[6].write(format_de(trade.quantity_y4_mwh, 0))
-        cols[7].write(trade.interpretation)
-        cols[8].write(trade.source_type)
-        if cols[9].button("Loeschen", key=f"delete_trade_{trade.id}"):
-            with SessionLocal() as session:
-                delete_intraday_trade(session, trade.id)
-            st.rerun()
-
 # --- Neues untertaegiges Geschaeft erfassen ------------------------------
-
-st.subheader("Neues untertaegiges Geschaeft erfassen")
-st.caption(
-    "Kein Richtungsfeld: positive Menge = Partner kauft von uns, "
-    "negative Menge = Partner verkauft an uns."
-)
 
 years = [today.year + offset for offset in range(5)]
 
-with st.form("new_intraday_trade_form", clear_on_submit=True):
-    trade_date = st.date_input("Datum", value=today)
-    partner_alias = st.text_input("Partner-/Kunden-Alias")
+with st.expander("Neues untertaegiges Geschaeft erfassen", expanded=False):
+    st.caption(
+        "Kein Richtungsfeld: positive Menge = Partner kauft von uns, "
+        "negative Menge = Partner verkauft an uns."
+    )
 
-    qty_cols = st.columns(5)
-    quantities = [
-        col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
-        for col, year in zip(qty_cols, years)
-    ]
+    with st.form("new_intraday_trade_form", clear_on_submit=True):
+        trade_date = st.date_input("Datum", value=today)
+        partner_alias = st.text_input("Partner-/Kunden-Alias")
 
-    submitted = st.form_submit_button("Einfuegen")
+        qty_cols = st.columns(5)
+        quantities = [
+            col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
+            for col, year in zip(qty_cols, years)
+        ]
+
+        submitted = st.form_submit_button("Einfuegen")
 
 if submitted:
     if not partner_alias.strip():
@@ -150,4 +157,38 @@ if submitted:
                 st.error(error)
         else:
             st.success("Untertaegiges Geschaeft gespeichert. Position wurde aktualisiert.")
+            st.rerun()
+
+# --- Untertaegige Geschaefte --------------------------------------------
+
+st.subheader("Untertaegige Geschaefte")
+
+if not trade_rows:
+    st.info("Noch keine untertaegigen Geschaefte erfasst.")
+else:
+    header_cols = st.columns([1, 2, 1, 1, 1, 1, 1, 2, 1, 1])
+    for col, header in zip(
+        header_cols,
+        ["Datum", "Partner-Alias", "Y0", "Y1", "Y2", "Y3", "Y4", "Interpretation", "Quelle", ""],
+    ):
+        col.markdown(f"**{header}**")
+
+    for trade in trade_rows:
+        cols = st.columns([1, 2, 1, 1, 1, 1, 1, 2, 1, 1])
+        if trade.trade_date < today:
+            # Datum liegt in der Vergangenheit (gestern oder aelter).
+            cols[0].markdown(f":red[**{trade.trade_date.isoformat()}**]")
+        else:
+            cols[0].write(trade.trade_date.isoformat())
+        cols[1].write(trade.partner_alias)
+        cols[2].write(format_de(trade.quantity_y0_mwh, 0))
+        cols[3].write(format_de(trade.quantity_y1_mwh, 0))
+        cols[4].write(format_de(trade.quantity_y2_mwh, 0))
+        cols[5].write(format_de(trade.quantity_y3_mwh, 0))
+        cols[6].write(format_de(trade.quantity_y4_mwh, 0))
+        cols[7].write(trade.interpretation)
+        cols[8].write(trade.source_type)
+        if cols[9].button("Loeschen", key=f"delete_trade_{trade.id}"):
+            with SessionLocal() as session:
+                delete_intraday_trade(session, trade.id)
             st.rerun()

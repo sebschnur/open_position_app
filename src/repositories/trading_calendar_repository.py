@@ -7,14 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.db.models import TradingCalendarEntry
-from src.domain.trading_calendar_logic import STATUS_DONE, STATUS_PLANNED
+from src.domain.trading_calendar_logic import STATUS_DELETED, STATUS_DONE, STATUS_PLANNED
 
 
 def list_visible_calendar_entries(session: Session) -> List[TradingCalendarEntry]:
-    """Liefert alle nicht erledigten Eintraege, faelligste zuerst."""
+    """Liefert alle nicht erledigten/geloeschten Eintraege, faelligste zuerst."""
     stmt = (
         select(TradingCalendarEntry)
-        .where(TradingCalendarEntry.status != STATUS_DONE)
+        .where(TradingCalendarEntry.status.notin_((STATUS_DONE, STATUS_DELETED)))
         .order_by(TradingCalendarEntry.due_date.asc())
     )
     return list(session.scalars(stmt))
