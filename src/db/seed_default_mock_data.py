@@ -67,6 +67,7 @@ def _seed_intraday_trades(session: Session, today: dt.date) -> None:
             partner_alias="Muster Partner A",
             quantity_y1_mwh=2500.0,
             source_type="manual",
+            last_modified_by=SOURCE_LABEL,
         )
     )
     session.add(
@@ -75,6 +76,7 @@ def _seed_intraday_trades(session: Session, today: dt.date) -> None:
             partner_alias="Muster Partner B",
             quantity_y1_mwh=-1200.0,
             source_type="manual",
+            last_modified_by=SOURCE_LABEL,
         )
     )
 
@@ -95,6 +97,7 @@ def _seed_prices_and_surcharges(session: Session, current_year: int, now: dt.dat
                 delivery_year=delivery_year,
                 price_eur_mwh=price,
                 price_timestamp=now,
+                last_modified_by=SOURCE_LABEL,
             )
         )
         session.add(
@@ -102,6 +105,7 @@ def _seed_prices_and_surcharges(session: Session, current_year: int, now: dt.dat
                 product_type=product_type,
                 delivery_year=delivery_year,
                 surcharge_eur_mwh=surcharge,
+                last_modified_by=SOURCE_LABEL,
             )
         )
 
@@ -154,10 +158,9 @@ def _seed_limit_orders(session: Session, current_year: int, today: dt.date) -> N
             trigger_delivery_year=current_year + 1,
             trigger_condition="partner_buys_price_lt_limit",
             limit_price_eur_mwh=90.00,
-            responsible_trading="Handel Mustermann",
-            responsible_sales="Vertrieb Musterfrau",
             valid_until=today + dt.timedelta(days=90),
             status="offen",
+            last_modified_by=SOURCE_LABEL,
         )
     )
 
@@ -170,6 +173,7 @@ def _seed_trading_calendar(session: Session, today: dt.date) -> None:
             direction="partner_buys",
             quantity_y1_mwh=5000.0,
             status="geplant",
+            last_modified_by=SOURCE_LABEL,
         )
     )
     session.add(
@@ -179,6 +183,7 @@ def _seed_trading_calendar(session: Session, today: dt.date) -> None:
             direction="partner_sells",
             quantity_y1_mwh=-3000.0,
             status="geplant",
+            last_modified_by=SOURCE_LABEL,
         )
     )
 

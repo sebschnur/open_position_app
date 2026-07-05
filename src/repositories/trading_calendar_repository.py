@@ -34,6 +34,7 @@ def add_calendar_entry(
     quantity_y2_mwh: float,
     quantity_y3_mwh: float,
     quantity_y4_mwh: float,
+    last_modified_by: str = "system",
 ) -> TradingCalendarEntry:
     """Legt einen neuen Handelskalendereintrag an (kein Commit - Aufrufer entscheidet)."""
     entry = TradingCalendarEntry(
@@ -46,15 +47,19 @@ def add_calendar_entry(
         quantity_y3_mwh=quantity_y3_mwh,
         quantity_y4_mwh=quantity_y4_mwh,
         status=STATUS_PLANNED,
+        last_modified_by=last_modified_by,
     )
     session.add(entry)
     session.flush()
     return entry
 
 
-def set_status(session: Session, entry_id: int, status: str) -> Optional[TradingCalendarEntry]:
-    """Setzt den Status eines Handelskalendereintrags (kein Commit - Aufrufer entscheidet)."""
+def set_status(
+    session: Session, entry_id: int, status: str, last_modified_by: str = "system"
+) -> Optional[TradingCalendarEntry]:
+    """Setzt Status und letzten Bearbeiter eines Kalendereintrags (kein Commit)."""
     entry = session.get(TradingCalendarEntry, entry_id)
     if entry is not None:
         entry.status = status
+        entry.last_modified_by = last_modified_by
     return entry

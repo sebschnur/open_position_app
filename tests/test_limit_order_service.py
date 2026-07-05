@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.db.database import Base
-from src.db.models import IntradayTrade, MarketPrice
+from src.db.models import IntradayTrade, LimitOrder, MarketPrice
 from src.domain.limit_order_logic import TRIGGER_PARTNER_BUYS_LT, TRIGGER_PARTNER_SELLS_GT
 from src.services.limit_order_service import (
     add_limit_order,
@@ -59,8 +59,6 @@ def test_add_limit_order_rejects_sign_mismatch(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_BUYS_LT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
     )
 
     assert errors
@@ -80,8 +78,6 @@ def test_add_limit_order_rejects_all_zero_quantities(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_BUYS_LT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
     )
 
     assert errors
@@ -100,8 +96,6 @@ def test_add_limit_order_saves_valid_order(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_BUYS_LT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
         valid_until=TODAY + dt.timedelta(days=30),
     )
 
@@ -128,8 +122,6 @@ def test_open_limit_order_rows_flags_triggered_condition(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_BUYS_LT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
     )
 
     rows = get_open_limit_order_rows(session)
@@ -151,8 +143,6 @@ def test_open_limit_order_rows_not_triggered_without_market_price(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_BUYS_LT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
     )
 
     rows = get_open_limit_order_rows(session)
@@ -174,8 +164,6 @@ def test_mark_executed_creates_intraday_trade_and_updates_status(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_BUYS_LT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
     )
     order_id = get_open_limit_order_rows(session)[0].id
 
@@ -205,8 +193,6 @@ def test_mark_executed_is_noop_when_order_already_closed(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_SELLS_GT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
     )
     order_id = get_open_limit_order_rows(session)[0].id
 
@@ -215,6 +201,104 @@ def test_mark_executed_is_noop_when_order_already_closed(session):
 
     trades = session.query(IntradayTrade).all()
     assert len(trades) == 1
+
+
+def _add_order(session, alias, valid_until):
+    add_limit_order(
+        session,
+        partner_alias=alias,
+        quantity_y0_mwh=0.0,
+        quantity_y1_mwh=1000.0,
+        quantity_y2_mwh=0.0,
+        quantity_y3_mwh=0.0,
+        quantity_y4_mwh=0.0,
+        trigger_product_type="Base",
+        trigger_delivery_year=Y1,
+        trigger_condition=TRIGGER_PARTNER_BUYS_LT,
+        limit_price_eur_mwh=90.0,
+        valid_until=valid_until,
+    )
+
+
+def test_open_limit_orders_sorted_by_valid_until_desc(session):
+    _add_order(session, "kurz", TODAY + dt.timedelta(days=10))
+    _add_order(session, "lang", TODAY + dt.timedelta(days=40))
+    _add_order(session, "ohne", None)
+
+    aliases = [row.partner_alias for row in get_open_limit_order_rows(session)]
+
+    # Aktuellstes "gueltig bis" oben, Eintraege ohne Datum ans Ende.
+    assert aliases[0] == "lang"
+    assert aliases[1] == "kurz"
+    assert aliases[-1] == "ohne"
+
+
+def test_add_limit_order_stores_username_as_last_modified_by(session):
+    add_limit_order(
+        session,
+        partner_alias="Testkunde",
+        quantity_y0_mwh=0.0,
+        quantity_y1_mwh=1000.0,
+        quantity_y2_mwh=0.0,
+        quantity_y3_mwh=0.0,
+        quantity_y4_mwh=0.0,
+        trigger_product_type="Base",
+        trigger_delivery_year=Y1,
+        trigger_condition=TRIGGER_PARTNER_BUYS_LT,
+        limit_price_eur_mwh=90.0,
+        username="anna",
+    )
+
+    rows = get_open_limit_order_rows(session)
+    assert rows[0].last_modified_by == "anna"
+
+
+def test_mark_executed_replaces_last_modified_by_on_order_and_trade(session):
+    add_limit_order(
+        session,
+        partner_alias="Testkunde",
+        quantity_y0_mwh=0.0,
+        quantity_y1_mwh=1000.0,
+        quantity_y2_mwh=0.0,
+        quantity_y3_mwh=0.0,
+        quantity_y4_mwh=0.0,
+        trigger_product_type="Base",
+        trigger_delivery_year=Y1,
+        trigger_condition=TRIGGER_PARTNER_BUYS_LT,
+        limit_price_eur_mwh=90.0,
+        username="anna",
+    )
+    order_id = get_open_limit_order_rows(session)[0].id
+
+    mark_executed(session, order_id, username="bernd", today=TODAY)
+
+    order = session.get(LimitOrder, order_id)
+    assert order.last_modified_by == "bernd"
+    trade = session.query(IntradayTrade).one()
+    assert trade.last_modified_by == "bernd"
+
+
+def test_mark_deleted_stores_executing_username(session):
+    add_limit_order(
+        session,
+        partner_alias="Testkunde",
+        quantity_y0_mwh=0.0,
+        quantity_y1_mwh=1000.0,
+        quantity_y2_mwh=0.0,
+        quantity_y3_mwh=0.0,
+        quantity_y4_mwh=0.0,
+        trigger_product_type="Base",
+        trigger_delivery_year=Y1,
+        trigger_condition=TRIGGER_PARTNER_BUYS_LT,
+        limit_price_eur_mwh=90.0,
+        username="anna",
+    )
+    order_id = get_open_limit_order_rows(session)[0].id
+
+    mark_deleted(session, order_id, username="bernd")
+
+    order = session.get(LimitOrder, order_id)
+    assert order.last_modified_by == "bernd"
 
 
 def test_mark_deleted_removes_order_from_open_list(session):
@@ -230,8 +314,6 @@ def test_mark_deleted_removes_order_from_open_list(session):
         trigger_delivery_year=Y1,
         trigger_condition=TRIGGER_PARTNER_BUYS_LT,
         limit_price_eur_mwh=90.0,
-        responsible_trading="Handel A",
-        responsible_sales="Vertrieb B",
     )
     order_id = get_open_limit_order_rows(session)[0].id
 

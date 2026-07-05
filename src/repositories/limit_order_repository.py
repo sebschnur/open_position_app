@@ -15,8 +15,16 @@ STATUS_EXPIRED = "abgelaufen"
 
 
 def list_open_limit_orders(session: Session) -> List[LimitOrder]:
-    """Liefert alle offenen Limitorders, neueste zuerst."""
-    stmt = select(LimitOrder).where(LimitOrder.status == STATUS_OPEN).order_by(LimitOrder.id.desc())
+    """Liefert alle offenen Limitorders; aktuellstes 'gueltig bis' zuerst.
+
+    Eintraege ohne 'gueltig bis' (NULL) sortiert SQLite bei DESC ans Ende;
+    innerhalb gleicher Datumswerte entscheidet die ID (neueste zuerst).
+    """
+    stmt = (
+        select(LimitOrder)
+        .where(LimitOrder.status == STATUS_OPEN)
+        .order_by(LimitOrder.valid_until.desc(), LimitOrder.id.desc())
+    )
     return list(session.scalars(stmt))
 
 
@@ -36,8 +44,7 @@ def add_limit_order(
     trigger_delivery_year: int,
     trigger_condition: str,
     limit_price_eur_mwh: float,
-    responsible_trading: str,
-    responsible_sales: str,
+    last_modified_by: str = "system",
     valid_until: Optional[dt.date] = None,
 ) -> LimitOrder:
     """Legt eine neue Limitorder an (kein Commit - Aufrufer entscheidet)."""
@@ -52,19 +59,26 @@ def add_limit_order(
         trigger_delivery_year=trigger_delivery_year,
         trigger_condition=trigger_condition,
         limit_price_eur_mwh=limit_price_eur_mwh,
-        responsible_trading=responsible_trading,
-        responsible_sales=responsible_sales,
+        # "Verantwortlicher" ist obsolet (siehe Modelldoku); die Spalten werden
+        # aus Kompatibilitaet mit bestehenden NOT-NULL-Datenbanken mit dem
+        # aktuellen Benutzernamen befuellt. Nachvollziehbarkeit: last_modified_by.
+        responsible_trading=last_modified_by,
+        responsible_sales=last_modified_by,
         valid_until=valid_until,
         status=STATUS_OPEN,
+        last_modified_by=last_modified_by,
     )
     session.add(order)
     session.flush()
     return order
 
 
-def set_status(session: Session, order_id: int, status: str) -> Optional[LimitOrder]:
-    """Setzt den Status einer Limitorder (kein Commit - Aufrufer entscheidet)."""
+def set_status(
+    session: Session, order_id: int, status: str, last_modified_by: str = "system"
+) -> Optional[LimitOrder]:
+    """Setzt Status und letzten Bearbeiter einer Limitorder (kein Commit)."""
     order = session.get(LimitOrder, order_id)
     if order is not None:
         order.status = status
+        order.last_modified_by = last_modified_by
     return order

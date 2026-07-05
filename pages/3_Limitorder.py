@@ -23,6 +23,7 @@ from src.services.limit_order_service import (
     mark_executed,
 )
 from src.ui_helpers import configure_wide_page
+from src.user_context import get_current_username
 
 configure_wide_page("Limitorder")
 
@@ -30,6 +31,10 @@ st.title("Limitorder")
 
 today = dt.date.today()
 current_year = today.year
+username = get_current_username()
+year_labels = [str(current_year + offset) for offset in range(5)]
+
+st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
 
 
 def _offset_from_label(label: str) -> int:
@@ -71,8 +76,6 @@ with st.expander("Neue Limitorder anlegen", expanded=False):
 
         limit_price = st.number_input("Limitpreis €/MWh", value=0.0, step=0.01, format="%.2f")
 
-        responsible = st.text_input("Verantwortlicher")
-
         valid_until = st.date_input("Gültig bis (optional)", value=None)
 
         submitted = st.form_submit_button("Limitorder speichern")
@@ -80,14 +83,10 @@ with st.expander("Neue Limitorder anlegen", expanded=False):
 if submitted:
     if not partner_alias.strip():
         st.error("Partner-/Kunden-Alias darf nicht leer sein.")
-    elif not responsible.strip():
-        st.error("Verantwortlicher darf nicht leer sein.")
     else:
         trigger_product_type, trigger_delivery_year = _TRIGGER_LABEL_TO_KEY[trigger_label]
         trigger_condition = _CONDITION_LABEL_TO_KEY[condition_label]
         with SessionLocal() as session:
-            # Ein einziges "Verantwortlicher"-Feld; das Prototyp-Schema hat noch
-            # zwei Spalten, die hier mit demselben Wert befuellt werden.
             errors = add_limit_order(
                 session,
                 partner_alias=partner_alias.strip(),
@@ -100,8 +99,7 @@ if submitted:
                 trigger_delivery_year=trigger_delivery_year,
                 trigger_condition=trigger_condition,
                 limit_price_eur_mwh=limit_price,
-                responsible_trading=responsible.strip(),
-                responsible_sales=responsible.strip(),
+                username=username,
                 valid_until=valid_until,
             )
         if errors:
@@ -123,14 +121,14 @@ if not order_rows:
     st.info("Keine offenen Limitorders vorhanden.")
 else:
     # Auslöseart-Spalte 20% schmaler (3 -> 2.4), dafuer neue Spalte "Gültig bis".
-    col_widths = [2, 1, 1, 1, 1, 1, 2, 2.4, 1, 1, 2, 2, 2, 2]
+    col_widths = [2, 1, 1, 1, 1, 1, 2, 2.4, 1, 1, 2, 2, 2, 2, 2]
     header_cols = st.columns(col_widths)
     for col, header in zip(
         header_cols,
         [
-            "Partner-Alias", "Y0", "Y1", "Y2", "Y3", "Y4",
+            "Partner-Alias", *year_labels,
             "Trigger", "Auslöseart", "Marktpreis", "Limitpreis", "Gültig bis",
-            "Ausgelöst?", "", "",
+            "Ausgelöst?", "Geändert von", "", "",
         ],
     ):
         col.markdown(f"**{header}**")
@@ -156,12 +154,13 @@ else:
             cols[11].markdown(":red[**Ja**]")
         else:
             cols[11].write("Nein")
-        if cols[12].button("Ausgeführt", key=f"execute_order_{order.id}"):
+        cols[12].write(order.last_modified_by)
+        if cols[13].button("Ausgeführt", key=f"execute_order_{order.id}"):
             with SessionLocal() as session:
-                mark_executed(session, order.id)
+                mark_executed(session, order.id, username=username)
             st.success("Untertägiges Geschäft erzeugt, Limitorder ausgeführt.")
             st.rerun()
-        if cols[13].button("Gelöscht", key=f"delete_order_{order.id}"):
+        if cols[14].button("Gelöscht", key=f"delete_order_{order.id}"):
             with SessionLocal() as session:
-                mark_deleted(session, order.id)
+                mark_deleted(session, order.id, username=username)
             st.rerun()

@@ -53,6 +53,7 @@ class TradingCalendarRow:
     quantity_y4_mwh: float
     display_status: str
     is_due: bool
+    last_modified_by: str
 
 
 def get_visible_calendar_rows(
@@ -76,6 +77,7 @@ def get_visible_calendar_rows(
                 quantity_y4_mwh=round_mwh(entry.quantity_y4_mwh),
                 display_status=STATUS_DUE if due_flag else entry.status,
                 is_due=due_flag,
+                last_modified_by=entry.last_modified_by,
             )
         )
     return rows
@@ -91,9 +93,11 @@ def add_calendar_entry(
     quantity_y2_mwh: float,
     quantity_y3_mwh: float,
     quantity_y4_mwh: float,
+    username: str = "system",
 ) -> List[str]:
     """Validiert und speichert einen neuen Handelskalendereintrag.
 
+    ``username`` wird als letzter Bearbeiter gespeichert (Nachvollziehbarkeit).
     Gibt eine Liste von Validierungsfehlern zurueck (leer = erfolgreich
     gespeichert und committet).
     """
@@ -119,13 +123,19 @@ def add_calendar_entry(
         quantity_y2_mwh=quantities[2],
         quantity_y3_mwh=quantities[3],
         quantity_y4_mwh=quantities[4],
+        last_modified_by=username,
     )
     session.commit()
     return []
 
 
-def mark_done(session: Session, entry_id: int, today: Optional[dt.date] = None) -> None:
-    """Erzeugt ein untertaegiges Geschaeft aus dem Kalendereintrag und setzt ihn auf 'erledigt'."""
+def mark_done(
+    session: Session, entry_id: int, username: str = "system", today: Optional[dt.date] = None
+) -> None:
+    """Erzeugt ein untertaegiges Geschaeft aus dem Kalendereintrag und setzt ihn auf 'erledigt'.
+
+    ``username`` (der ausfuehrende Benutzer) ersetzt den bisherigen Bearbeiter.
+    """
     today = today or dt.date.today()
     entry = get_calendar_entry(session, entry_id)
     if entry is None or entry.status == STATUS_DONE:
@@ -142,19 +152,21 @@ def mark_done(session: Session, entry_id: int, today: Optional[dt.date] = None) 
         quantity_y4_mwh=entry.quantity_y4_mwh,
         source_type="trading_calendar",
         source_id=entry.id,
+        last_modified_by=username,
     )
-    set_status(session, entry_id, STATUS_DONE)
+    set_status(session, entry_id, STATUS_DONE, last_modified_by=username)
     session.commit()
 
 
-def mark_deleted(session: Session, entry_id: int) -> None:
+def mark_deleted(session: Session, entry_id: int, username: str = "system") -> None:
     """Blendet den Kalendereintrag aus, OHNE ein untertaegiges Geschaeft zu erzeugen.
 
     Wird fuer den "Loeschen"-Button genutzt: der Eintrag wird nicht in die
     Position uebertragen, sondern nur aus der Standardansicht entfernt.
+    ``username`` wird als Bearbeiter vermerkt.
     """
     entry = get_calendar_entry(session, entry_id)
     if entry is None or entry.status in (STATUS_DONE, STATUS_DELETED):
         return
-    set_status(session, entry_id, STATUS_DELETED)
+    set_status(session, entry_id, STATUS_DELETED, last_modified_by=username)
     session.commit()

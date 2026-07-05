@@ -134,6 +134,28 @@ def test_mark_done_creates_intraday_trade_and_hides_entry(session):
     assert trade.source_id == entry_id
 
 
+def test_add_entry_stores_username_and_mark_done_replaces_it(session):
+    add_calendar_entry(
+        session,
+        due_date=TODAY,
+        partner_alias="Testkunde",
+        direction=DIRECTION_PARTNER_BUYS,
+        quantity_y0_mwh=0.0,
+        quantity_y1_mwh=1000.0,
+        quantity_y2_mwh=0.0,
+        quantity_y3_mwh=0.0,
+        quantity_y4_mwh=0.0,
+        username="anna",
+    )
+    row = get_visible_calendar_rows(session, today=TODAY)[0]
+    assert row.last_modified_by == "anna"
+
+    mark_done(session, row.id, username="bernd", today=TODAY)
+
+    trade = session.query(IntradayTrade).one()
+    assert trade.last_modified_by == "bernd"
+
+
 def test_mark_done_is_noop_when_entry_already_done(session):
     add_calendar_entry(
         session,

@@ -623,6 +623,7 @@ def seed_database_from_excel(
                 quantity_y3_mwh=seed.quantity_y3_mwh,
                 quantity_y4_mwh=seed.quantity_y4_mwh,
                 source_type="manual",
+                last_modified_by=SOURCE_LABEL,
             )
         )
 
@@ -633,6 +634,7 @@ def seed_database_from_excel(
             MarketPrice(
                 product_type=seed.product_type, delivery_year=seed.delivery_year,
                 price_eur_mwh=seed.price_eur_mwh, price_timestamp=now,
+                last_modified_by=SOURCE_LABEL,
             )
         )
     for seed in surcharge_seeds:
@@ -640,6 +642,7 @@ def seed_database_from_excel(
             OtcSurcharge(
                 product_type=seed.product_type, delivery_year=seed.delivery_year,
                 surcharge_eur_mwh=seed.surcharge_eur_mwh,
+                last_modified_by=SOURCE_LABEL,
             )
         )
 
@@ -665,6 +668,7 @@ def seed_database_from_excel(
                 quantity_y0_mwh=seed.quantity_y0_mwh, quantity_y1_mwh=seed.quantity_y1_mwh,
                 quantity_y2_mwh=seed.quantity_y2_mwh, quantity_y3_mwh=seed.quantity_y3_mwh,
                 quantity_y4_mwh=seed.quantity_y4_mwh, status="geplant",
+                last_modified_by=SOURCE_LABEL,
             )
         )
 
@@ -685,6 +689,7 @@ def seed_database_from_excel(
                 responsible_sales=seed.responsible_sales,
                 valid_until=seed.valid_until,
                 status="offen",
+                last_modified_by=SOURCE_LABEL,
             )
         )
 

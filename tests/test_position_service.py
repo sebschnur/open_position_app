@@ -112,6 +112,23 @@ def test_intraday_trade_with_mixed_signs_is_not_reported_as_no_quantity(session)
     assert trade_rows[0].interpretation == "Gemischte Vorzeichen - Jahresmengen pruefen"
 
 
+def test_add_intraday_trade_stores_username_as_last_modified_by(session):
+    add_intraday_trade(
+        session,
+        trade_date=TODAY,
+        partner_alias="Testpartner",
+        quantity_y0_mwh=0,
+        quantity_y1_mwh=1000,
+        quantity_y2_mwh=0,
+        quantity_y3_mwh=0,
+        quantity_y4_mwh=0,
+        username="anna",
+    )
+
+    trade_rows = get_intraday_trade_rows(session)
+    assert trade_rows[0].last_modified_by == "anna"
+
+
 def test_intraday_trade_interpretation_and_delete(session):
     add_intraday_trade(
         session,

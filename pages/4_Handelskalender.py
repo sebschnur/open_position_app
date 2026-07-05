@@ -22,12 +22,17 @@ from src.services.trading_calendar_service import (
     mark_done,
 )
 from src.ui_helpers import configure_wide_page
+from src.user_context import get_current_username
 
 configure_wide_page("Handelskalender")
 
 st.title("Handelskalender")
 
 today = dt.date.today()
+username = get_current_username()
+year_labels = [str(today.year + offset) for offset in range(5)]
+
+st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
 
 _DIRECTION_LABEL_TO_KEY = {label: key for key, label in DIRECTION_LABELS.items()}
 
@@ -72,6 +77,7 @@ if submitted:
                 quantity_y2_mwh=quantities[2],
                 quantity_y3_mwh=quantities[3],
                 quantity_y4_mwh=quantities[4],
+                username=username,
             )
         if errors:
             for error in errors:
@@ -91,11 +97,11 @@ with SessionLocal() as session:
 if not calendar_rows:
     st.info("Keine offenen Kalendereinträge vorhanden.")
 else:
-    col_widths = [1, 2, 2, 1, 1, 1, 1, 1, 1, 2, 2]
+    col_widths = [1, 2, 2, 1, 1, 1, 1, 1, 1, 1.5, 2, 2]
     header_cols = st.columns(col_widths)
     for col, header in zip(
         header_cols,
-        ["Datum", "Partner-Alias", "Richtung", "Y0", "Y1", "Y2", "Y3", "Y4", "Status", "", ""],
+        ["Datum", "Partner-Alias", "Richtung", *year_labels, "Status", "Geändert von", "", ""],
     ):
         col.markdown(f"**{header}**")
 
@@ -113,12 +119,13 @@ else:
             cols[8].markdown(f":red[**{row.display_status}**]")
         else:
             cols[8].write(row.display_status)
-        if cols[9].button("Ausgeführt", key=f"complete_entry_{row.id}"):
+        cols[9].write(row.last_modified_by)
+        if cols[10].button("Ausgeführt", key=f"complete_entry_{row.id}"):
             with SessionLocal() as session:
-                mark_done(session, row.id)
+                mark_done(session, row.id, username=username)
             st.success("Untertägiges Geschäft erzeugt, Eintrag ausgeführt.")
             st.rerun()
-        if cols[10].button("Löschen", key=f"delete_entry_{row.id}"):
+        if cols[11].button("Löschen", key=f"delete_entry_{row.id}"):
             with SessionLocal() as session:
-                mark_deleted(session, row.id)
+                mark_deleted(session, row.id, username=username)
             st.rerun()

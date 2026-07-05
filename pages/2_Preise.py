@@ -22,11 +22,15 @@ from src.services.price_service import (
     get_price_table,
     save_prices_and_surcharges,
 )
+from src.user_context import get_current_username
 
 st.title("Preise / Vertriebsinfos")
 
 today = dt.date.today()
 current_year = today.year
+username = get_current_username()
+
+st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
 
 
 def _offset_from_label(label: str) -> int:
@@ -52,7 +56,14 @@ with st.form("prices_and_surcharges_form"):
     header_cols[2].markdown("**OTC-Aufschlag EUR/MWh**")
 
     input_keys = []
+    previous_product_type = None
     for product_type, year_label in PRICE_PRODUCT_ORDER_TABLE:
+        # Base- und Peak-Block optisch voneinander absetzen: breiterer Abstand
+        # beim Uebergang von Base (letzte Zeile) zu Peak (erste Zeile).
+        if previous_product_type == "Base" and product_type == "Peak":
+            st.markdown("<div style='height: 1.75rem'></div>", unsafe_allow_html=True)
+        previous_product_type = product_type
+
         delivery_year = current_year + _offset_from_label(year_label)
         row = price_rows_by_key[(product_type, delivery_year)]
         cols = st.columns([2, 2, 2])
@@ -88,8 +99,12 @@ if submitted:
         for product_type, delivery_year in input_keys
     ]
     with SessionLocal() as session:
-        save_prices_and_surcharges(session, entries)
-    st.success("Preise und Aufschlaege gespeichert.")
+        save_prices_and_surcharges(session, entries, username=username)
+        # Chat- und Mailtext direkt aus den frisch gespeicherten Werten erzeugen,
+        # damit sie ohne zusaetzlichen Button-Klick aktuell sind.
+        st.session_state["chat_text_area"] = get_chat_text(session, today=today)
+        st.session_state["mail_text_area"] = get_mail_text(session, today=today)
+    st.success("Preise und Aufschlaege gespeichert. Chat- und Mailtext wurden aktualisiert.")
     st.rerun()
 
 # --- Preisvergleich Settlement -------------------------------------------

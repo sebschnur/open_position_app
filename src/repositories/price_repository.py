@@ -33,6 +33,7 @@ def upsert_market_price(
     delivery_year: int,
     price_eur_mwh: float,
     price_timestamp: dt.datetime,
+    last_modified_by: str = "system",
 ) -> MarketPrice:
     """Legt einen Marktpreis an oder aktualisiert ihn (unique je Produkt/Jahr)."""
     stmt = select(MarketPrice).where(
@@ -45,11 +46,13 @@ def upsert_market_price(
             delivery_year=delivery_year,
             price_eur_mwh=price_eur_mwh,
             price_timestamp=price_timestamp,
+            last_modified_by=last_modified_by,
         )
         session.add(existing)
     else:
         existing.price_eur_mwh = price_eur_mwh
         existing.price_timestamp = price_timestamp
+        existing.last_modified_by = last_modified_by
     return existing
 
 
@@ -58,6 +61,7 @@ def upsert_otc_surcharge(
     product_type: str,
     delivery_year: int,
     surcharge_eur_mwh: float,
+    last_modified_by: str = "system",
 ) -> OtcSurcharge:
     """Legt einen OTC-Aufschlag an oder aktualisiert ihn (unique je Produkt/Jahr)."""
     stmt = select(OtcSurcharge).where(
@@ -69,8 +73,10 @@ def upsert_otc_surcharge(
             product_type=product_type,
             delivery_year=delivery_year,
             surcharge_eur_mwh=surcharge_eur_mwh,
+            last_modified_by=last_modified_by,
         )
         session.add(existing)
     else:
         existing.surcharge_eur_mwh = surcharge_eur_mwh
+        existing.last_modified_by = last_modified_by
     return existing

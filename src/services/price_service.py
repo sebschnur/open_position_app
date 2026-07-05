@@ -104,12 +104,14 @@ def get_price_table(session: Session, today: Optional[dt.date] = None) -> List[P
 def save_prices_and_surcharges(
     session: Session,
     entries: List[Dict],
+    username: str = "system",
     now: Optional[dt.datetime] = None,
 ) -> None:
     """Speichert Marktpreise und OTC-Aufschlaege gemeinsam - kein getrennter Speichern-Button.
 
     entries: Liste von Dicts mit den Schluesseln "product_type", "delivery_year",
-    "market_price_eur_mwh", "otc_surcharge_eur_mwh".
+    "market_price_eur_mwh", "otc_surcharge_eur_mwh". ``username`` wird als
+    letzter Bearbeiter gespeichert (Nachvollziehbarkeit).
     """
     now = now or dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     for entry in entries:
@@ -119,12 +121,14 @@ def save_prices_and_surcharges(
             delivery_year=entry["delivery_year"],
             price_eur_mwh=entry["market_price_eur_mwh"],
             price_timestamp=now,
+            last_modified_by=username,
         )
         upsert_otc_surcharge(
             session,
             product_type=entry["product_type"],
             delivery_year=entry["delivery_year"],
             surcharge_eur_mwh=entry["otc_surcharge_eur_mwh"],
+            last_modified_by=username,
         )
     session.commit()
 

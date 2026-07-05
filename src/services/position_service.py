@@ -54,6 +54,7 @@ class IntradayTradeRow:
     quantity_y4_mwh: float
     interpretation: str
     source_type: str
+    last_modified_by: str
 
 
 def get_position_table(session: Session, today: Optional[dt.date] = None) -> List[PositionRow]:
@@ -124,6 +125,7 @@ def get_intraday_trade_rows(session: Session) -> List[IntradayTradeRow]:
                 quantity_y4_mwh=round_mwh(trade.quantity_y4_mwh),
                 interpretation=interpret_quantities(quantities),
                 source_type=trade.source_type,
+                last_modified_by=trade.last_modified_by,
             )
         )
     return rows
@@ -138,11 +140,13 @@ def add_intraday_trade(
     quantity_y2_mwh: float,
     quantity_y3_mwh: float,
     quantity_y4_mwh: float,
+    username: str = "system",
     source_type: str = "manual",
     source_id: Optional[int] = None,
 ) -> List[str]:
     """Validiert und speichert ein neues untertaegiges Geschaeft.
 
+    ``username`` wird als letzter Bearbeiter gespeichert (Nachvollziehbarkeit).
     Gibt eine Liste von Validierungsfehlern zurueck (leer = erfolgreich
     gespeichert und committet).
     """
@@ -167,6 +171,7 @@ def add_intraday_trade(
         quantity_y4_mwh=quantities[4],
         source_type=source_type,
         source_id=source_id,
+        last_modified_by=username,
     )
     session.commit()
     return []

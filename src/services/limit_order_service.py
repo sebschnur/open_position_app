@@ -49,8 +49,7 @@ class LimitOrderRow:
     limit_price_eur_mwh: float
     current_market_price_eur_mwh: Optional[float]
     is_triggered: bool
-    responsible_trading: str
-    responsible_sales: str
+    last_modified_by: str
     valid_until: Optional[dt.date]
     status: str
 
@@ -79,8 +78,7 @@ def get_open_limit_order_rows(session: Session) -> List[LimitOrderRow]:
                 limit_price_eur_mwh=order.limit_price_eur_mwh,
                 current_market_price_eur_mwh=current_price,
                 is_triggered=triggered,
-                responsible_trading=order.responsible_trading,
-                responsible_sales=order.responsible_sales,
+                last_modified_by=order.last_modified_by,
                 valid_until=order.valid_until,
                 status=order.status,
             )
@@ -100,12 +98,14 @@ def add_limit_order(
     trigger_delivery_year: int,
     trigger_condition: str,
     limit_price_eur_mwh: float,
-    responsible_trading: str,
-    responsible_sales: str,
+    username: str = "system",
     valid_until: Optional[dt.date] = None,
 ) -> List[str]:
     """Validiert und speichert eine neue Limitorder.
 
+    ``username`` wird als letzter Bearbeiter gespeichert. Ein separates Feld
+    "Verantwortlicher" gibt es nicht mehr - die Nachvollziehbarkeit erfolgt
+    ausschliesslich ueber den Benutzernamen (last_modified_by).
     Gibt eine Liste von Validierungsfehlern zurueck (leer = erfolgreich
     gespeichert und committet).
     """
@@ -133,16 +133,20 @@ def add_limit_order(
         trigger_delivery_year=trigger_delivery_year,
         trigger_condition=trigger_condition,
         limit_price_eur_mwh=limit_price_eur_mwh,
-        responsible_trading=responsible_trading,
-        responsible_sales=responsible_sales,
+        last_modified_by=username,
         valid_until=valid_until,
     )
     session.commit()
     return []
 
 
-def mark_executed(session: Session, order_id: int, today: Optional[dt.date] = None) -> None:
-    """Erzeugt ein untertaegiges Geschaeft aus der Limitorder und setzt sie auf 'ausgefuehrt'."""
+def mark_executed(
+    session: Session, order_id: int, username: str = "system", today: Optional[dt.date] = None
+) -> None:
+    """Erzeugt ein untertaegiges Geschaeft aus der Limitorder und setzt sie auf 'ausgefuehrt'.
+
+    ``username`` (der ausfuehrende Benutzer) ersetzt den bisherigen Bearbeiter.
+    """
     today = today or dt.date.today()
     order = get_limit_order(session, order_id)
     if order is None or order.status != STATUS_OPEN:
@@ -159,12 +163,13 @@ def mark_executed(session: Session, order_id: int, today: Optional[dt.date] = No
         quantity_y4_mwh=order.quantity_y4_mwh,
         source_type="limit_order",
         source_id=order.id,
+        last_modified_by=username,
     )
-    set_status(session, order_id, STATUS_EXECUTED)
+    set_status(session, order_id, STATUS_EXECUTED, last_modified_by=username)
     session.commit()
 
 
-def mark_deleted(session: Session, order_id: int) -> None:
-    """Setzt eine Limitorder auf 'geloescht'."""
-    set_status(session, order_id, STATUS_DELETED)
+def mark_deleted(session: Session, order_id: int, username: str = "system") -> None:
+    """Setzt eine Limitorder auf 'geloescht'; ``username`` wird als Bearbeiter vermerkt."""
+    set_status(session, order_id, STATUS_DELETED, last_modified_by=username)
     session.commit()

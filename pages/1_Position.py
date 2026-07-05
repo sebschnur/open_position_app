@@ -23,13 +23,17 @@ from src.services.position_service import (
     get_position_table,
 )
 from src.ui_helpers import configure_wide_page
+from src.user_context import get_current_username
 
 configure_wide_page("Position")
 
 st.title("Position")
 
 today = dt.date.today()
+username = get_current_username()
+year_labels = [str(today.year + offset) for offset in range(5)]
 st.caption(f"Datenstand: {today.isoformat()} (Mockdaten)")
+st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
 
 with SessionLocal() as session:
     position_rows = get_position_table(session, today=today)
@@ -151,6 +155,7 @@ if submitted:
                 quantity_y2_mwh=quantities[2],
                 quantity_y3_mwh=quantities[3],
                 quantity_y4_mwh=quantities[4],
+                username=username,
             )
         if errors:
             for error in errors:
@@ -166,15 +171,16 @@ st.subheader("Untertaegige Geschaefte")
 if not trade_rows:
     st.info("Noch keine untertaegigen Geschaefte erfasst.")
 else:
-    header_cols = st.columns([1, 2, 1, 1, 1, 1, 1, 2, 1, 1])
+    col_widths = [1, 2, 1, 1, 1, 1, 1, 2, 1, 1.5, 1]
+    header_cols = st.columns(col_widths)
     for col, header in zip(
         header_cols,
-        ["Datum", "Partner-Alias", "Y0", "Y1", "Y2", "Y3", "Y4", "Interpretation", "Quelle", ""],
+        ["Datum", "Partner-Alias", *year_labels, "Interpretation", "Quelle", "Geändert von", ""],
     ):
         col.markdown(f"**{header}**")
 
     for trade in trade_rows:
-        cols = st.columns([1, 2, 1, 1, 1, 1, 1, 2, 1, 1])
+        cols = st.columns(col_widths)
         if trade.trade_date < today:
             # Datum liegt in der Vergangenheit (gestern oder aelter).
             cols[0].markdown(f":red[**{trade.trade_date.isoformat()}**]")
@@ -188,7 +194,8 @@ else:
         cols[6].write(format_de(trade.quantity_y4_mwh, 0))
         cols[7].write(trade.interpretation)
         cols[8].write(trade.source_type)
-        if cols[9].button("Loeschen", key=f"delete_trade_{trade.id}"):
+        cols[9].write(trade.last_modified_by)
+        if cols[10].button("Loeschen", key=f"delete_trade_{trade.id}"):
             with SessionLocal() as session:
                 delete_intraday_trade(session, trade.id)
             st.rerun()

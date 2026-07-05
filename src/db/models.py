@@ -55,6 +55,7 @@ class IntradayTrade(Base):
     quantity_y4_mwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     source_type: Mapped[str] = mapped_column(String(30), nullable=False)
     source_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
 
 
@@ -71,6 +72,7 @@ class MarketPrice(Base):
     delivery_year: Mapped[int] = mapped_column(Integer, nullable=False)
     price_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
     price_timestamp: Mapped[dt.datetime] = mapped_column(DateTime, nullable=False)
+    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
@@ -89,6 +91,7 @@ class OtcSurcharge(Base):
     product_type: Mapped[str] = mapped_column(String(10), nullable=False)
     delivery_year: Mapped[int] = mapped_column(Integer, nullable=False)
     surcharge_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
+    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
@@ -144,10 +147,14 @@ class LimitOrder(Base):
     trigger_delivery_year: Mapped[int] = mapped_column(Integer, nullable=False)
     trigger_condition: Mapped[str] = mapped_column(String(40), nullable=False)
     limit_price_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
-    responsible_trading: Mapped[str] = mapped_column(String(120), nullable=False)
-    responsible_sales: Mapped[str] = mapped_column(String(120), nullable=False)
+    # "Verantwortlicher" ist obsolet: die Nachvollziehbarkeit erfolgt jetzt
+    # ausschliesslich ueber last_modified_by. Die Spalten bleiben (nun optional)
+    # fuer bestehende Daten und den Excel-Import erhalten.
+    responsible_trading: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    responsible_sales: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     valid_until: Mapped[Optional[dt.date]] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="offen")
+    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
@@ -169,6 +176,7 @@ class TradingCalendarEntry(Base):
     quantity_y3_mwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     quantity_y4_mwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="geplant")
+    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
     created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False

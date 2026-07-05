@@ -26,6 +26,7 @@ def add_intraday_trade(
     quantity_y4_mwh: float,
     source_type: str,
     source_id: Optional[int] = None,
+    last_modified_by: str = "system",
 ) -> IntradayTrade:
     """Legt ein neues untertaegiges Geschaeft an (kein Commit - Aufrufer entscheidet)."""
     trade = IntradayTrade(
@@ -38,6 +39,7 @@ def add_intraday_trade(
         quantity_y4_mwh=quantity_y4_mwh,
         source_type=source_type,
         source_id=source_id,
+        last_modified_by=last_modified_by,
     )
     session.add(trade)
     session.flush()
