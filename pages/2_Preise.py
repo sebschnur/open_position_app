@@ -113,14 +113,24 @@ comparison_df = pd.DataFrame(
     ]
 )
 
+_COMPARISON_NUMBER_COLUMNS = [
+    "Marktpreis",
+    "OTC-Aufschlag",
+    "Finaler Preis",
+    "Settlement Vortag",
+    "Differenz",
+]
+
 st.dataframe(
-    comparison_df,
+    comparison_df.style.format(
+        precision=2,
+        thousands=".",
+        decimal=",",
+        na_rep="-",
+        subset=_COMPARISON_NUMBER_COLUMNS,
+    ),
     hide_index=True,
     width="stretch",
-    column_config={
-        col: st.column_config.NumberColumn(format="%.2f")
-        for col in ["Marktpreis", "OTC-Aufschlag", "Finaler Preis", "Settlement Vortag", "Differenz"]
-    },
 )
 
 # --- Chat-Kurztext --------------------------------------------------------
@@ -174,13 +184,14 @@ with st.expander("PFC-Pruefung anzeigen"):
             ]
         )
         st.dataframe(
-            pfc_df,
+            pfc_df.style.format(
+                precision=2,
+                thousands=".",
+                decimal=",",
+                na_rep="-",
+                subset=["PFC-Mittelwert", "Settlementpreis", "Differenz"],
+            ),
             hide_index=True,
             width="stretch",
-            column_config={
-                "PFC-Mittelwert": st.column_config.NumberColumn(format="%.2f"),
-                "Settlementpreis": st.column_config.NumberColumn(format="%.2f"),
-                "Differenz": st.column_config.NumberColumn(format="%.2f"),
-            },
         )
         st.caption("Keine harte automatische Ampellogik - reine Anzeige zur fachlichen Pruefung.")

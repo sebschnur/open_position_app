@@ -14,6 +14,7 @@ import streamlit as st
 
 from src.db.database import SessionLocal
 from src.domain.trading_calendar_logic import DIRECTION_LABELS, STATUS_DUE
+from src.format_utils import format_de
 from src.services.trading_calendar_service import (
     add_calendar_entry,
     get_visible_calendar_rows,
@@ -99,11 +100,11 @@ else:
         cols[0].write(row.due_date.isoformat())
         cols[1].write(row.partner_alias)
         cols[2].write(row.direction_label)
-        cols[3].write(f"{row.quantity_y0_mwh:,.0f}")
-        cols[4].write(f"{row.quantity_y1_mwh:,.0f}")
-        cols[5].write(f"{row.quantity_y2_mwh:,.0f}")
-        cols[6].write(f"{row.quantity_y3_mwh:,.0f}")
-        cols[7].write(f"{row.quantity_y4_mwh:,.0f}")
+        cols[3].write(format_de(row.quantity_y0_mwh, 0))
+        cols[4].write(format_de(row.quantity_y1_mwh, 0))
+        cols[5].write(format_de(row.quantity_y2_mwh, 0))
+        cols[6].write(format_de(row.quantity_y3_mwh, 0))
+        cols[7].write(format_de(row.quantity_y4_mwh, 0))
         if row.display_status == STATUS_DUE:
             cols[8].markdown(f":red[**{row.display_status}**]")
         else:

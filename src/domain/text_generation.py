@@ -8,6 +8,8 @@ echter Mailversand - nur kopierbarer Text, neutrale Formulierung.
 from dataclasses import dataclass
 from typing import List, Optional
 
+from src.format_utils import format_de
+
 CHAT_HEADER = "Aktuelle Indikationen Vertrieb:"
 MAIL_HEADER = "Aktuelle Preisindikationen für den Vertrieb:"
 
@@ -21,7 +23,7 @@ class PriceTextEntry:
 
 def _format_eur_mwh(value: float) -> str:
     """Deutsches Zahlenformat mit Komma, z. B. 84,25 €/MWh."""
-    return f"{value:.2f}".replace(".", ",") + " €/MWh"
+    return f"{format_de(value, 2)} €/MWh"
 
 
 def _format_signed_eur_mwh(value: float) -> str:

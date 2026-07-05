@@ -14,6 +14,7 @@ import streamlit as st
 
 from src.db.database import SessionLocal
 from src.domain.position_logic import STATUS_LIMIT_BREACHED
+from src.format_utils import format_de
 from src.services.position_service import (
     add_intraday_trade,
     delete_intraday_trade,
@@ -56,17 +57,25 @@ def _highlight_breach(row: pd.Series) -> list:
     return [""] * len(row)
 
 
+_MW_COLUMNS = [
+    "PMS-Position MW",
+    "Untertaegige Geschaefte MW",
+    "Simulierte Position MW",
+    "Limit MW",
+]
+
+# Deutsches Zahlenformat (1.234,56) ueber den pandas-Styler statt ueber
+# column_config, das nur englische Formatierung unterstuetzt.
+position_style = (
+    position_df.style.apply(_highlight_breach, axis=1)
+    .format(precision=2, thousands=".", decimal=",", na_rep="-", subset=_MW_COLUMNS)
+    .format(precision=1, thousands=".", decimal=",", na_rep="-", subset=["Auslastung %"])
+)
+
 st.dataframe(
-    position_df.style.apply(_highlight_breach, axis=1),
+    position_style,
     hide_index=True,
     width="stretch",
-    column_config={
-        "PMS-Position MW": st.column_config.NumberColumn(format="%.2f"),
-        "Untertaegige Geschaefte MW": st.column_config.NumberColumn(format="%.2f"),
-        "Simulierte Position MW": st.column_config.NumberColumn(format="%.2f"),
-        "Limit MW": st.column_config.NumberColumn(format="%.2f"),
-        "Auslastung %": st.column_config.NumberColumn(format="%.1f"),
-    },
 )
 
 # --- Untertaegige Geschaefte --------------------------------------------
@@ -87,11 +96,11 @@ else:
         cols = st.columns([1, 2, 1, 1, 1, 1, 1, 2, 1, 1])
         cols[0].write(trade.trade_date.isoformat())
         cols[1].write(trade.partner_alias)
-        cols[2].write(f"{trade.quantity_y0_mwh:,.0f}")
-        cols[3].write(f"{trade.quantity_y1_mwh:,.0f}")
-        cols[4].write(f"{trade.quantity_y2_mwh:,.0f}")
-        cols[5].write(f"{trade.quantity_y3_mwh:,.0f}")
-        cols[6].write(f"{trade.quantity_y4_mwh:,.0f}")
+        cols[2].write(format_de(trade.quantity_y0_mwh, 0))
+        cols[3].write(format_de(trade.quantity_y1_mwh, 0))
+        cols[4].write(format_de(trade.quantity_y2_mwh, 0))
+        cols[5].write(format_de(trade.quantity_y3_mwh, 0))
+        cols[6].write(format_de(trade.quantity_y4_mwh, 0))
         cols[7].write(trade.interpretation)
         cols[8].write(trade.source_type)
         if cols[9].button("Loeschen", key=f"delete_trade_{trade.id}"):

@@ -15,6 +15,7 @@ import streamlit as st
 from src.config import PRICE_PRODUCT_ORDER_TABLE
 from src.db.database import SessionLocal
 from src.domain.limit_order_logic import TRIGGER_CONDITION_LABELS
+from src.format_utils import format_de
 from src.services.limit_order_service import (
     add_limit_order,
     get_open_limit_order_rows,
@@ -133,19 +134,15 @@ else:
     for order in order_rows:
         cols = st.columns(col_widths)
         cols[0].write(order.partner_alias)
-        cols[1].write(f"{order.quantity_y0_mwh:,.0f}")
-        cols[2].write(f"{order.quantity_y1_mwh:,.0f}")
-        cols[3].write(f"{order.quantity_y2_mwh:,.0f}")
-        cols[4].write(f"{order.quantity_y3_mwh:,.0f}")
-        cols[5].write(f"{order.quantity_y4_mwh:,.0f}")
+        cols[1].write(format_de(order.quantity_y0_mwh, 0))
+        cols[2].write(format_de(order.quantity_y1_mwh, 0))
+        cols[3].write(format_de(order.quantity_y2_mwh, 0))
+        cols[4].write(format_de(order.quantity_y3_mwh, 0))
+        cols[5].write(format_de(order.quantity_y4_mwh, 0))
         cols[6].write(order.trigger_label)
         cols[7].write(order.trigger_condition_label)
-        cols[8].write(f"{order.limit_price_eur_mwh:,.2f}")
-        cols[9].write(
-            f"{order.current_market_price_eur_mwh:,.2f}"
-            if order.current_market_price_eur_mwh is not None
-            else "-"
-        )
+        cols[8].write(format_de(order.limit_price_eur_mwh, 2))
+        cols[9].write(format_de(order.current_market_price_eur_mwh, 2))
         if order.is_triggered:
             cols[10].markdown(":red[**Ja**]")
         else:
