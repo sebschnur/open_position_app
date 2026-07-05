@@ -37,7 +37,7 @@ def create_initial_backup() -> bool:
 def _record_backup_timestamp() -> None:
     """Vermerkt den Zeitpunkt der Backup-Erzeugung in app_metadata."""
     with SessionLocal() as session:
-        now = dt.datetime.utcnow()
+        now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
         upsert_metadata(session, "initial_backup_created_at", now.isoformat(), now)
         session.commit()
 

@@ -6,6 +6,11 @@ venv/
 .pytest_cache/
 *.egg-info/
 
+# Test-Coverage
+.coverage
+.coverage.*
+htmlcov/
+
 # Datenbank (wird lokal erzeugt, nicht versionieren)
 data/app.db
 data/app_initial_backup.db

@@ -18,7 +18,10 @@ from src.db.database import Base
 
 
 def _utcnow() -> dt.datetime:
-    return dt.datetime.utcnow()
+    # Naiver UTC-Zeitstempel. dt.datetime.utcnow() ist ab Python 3.12
+    # deprecated; die tz-bewusste Variante wird bewusst wieder auf naiv
+    # reduziert, damit sich das gespeicherte Format nicht aendert.
+    return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
 
 
 class PortfolioPosition(Base):

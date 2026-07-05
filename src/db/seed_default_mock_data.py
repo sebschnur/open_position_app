@@ -34,7 +34,7 @@ def _offset_from_label(label: str) -> int:
 def seed_default_mock_data(session: Session) -> None:
     """Befuellt eine leere Datenbank mit Default-Mockdaten fuer alle Fachtabellen."""
     today = dt.date.today()
-    now = dt.datetime.utcnow()
+    now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     current_year = today.year
 
     _seed_portfolio_positions(session, current_year, today)

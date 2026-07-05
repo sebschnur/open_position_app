@@ -111,7 +111,7 @@ def save_prices_and_surcharges(
     entries: Liste von Dicts mit den Schluesseln "product_type", "delivery_year",
     "market_price_eur_mwh", "otc_surcharge_eur_mwh".
     """
-    now = now or dt.datetime.utcnow()
+    now = now or dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     for entry in entries:
         upsert_market_price(
             session,

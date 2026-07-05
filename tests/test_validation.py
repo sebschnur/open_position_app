@@ -32,6 +32,11 @@ def test_expected_sign_unknown_raises():
         expected_sign_for_direction("unbekannt")
 
 
+def test_expected_sign_for_trigger_condition_unknown_raises():
+    with pytest.raises(ValueError):
+        expected_sign_for_trigger_condition("unbekannt")
+
+
 def test_at_least_one_nonzero():
     assert at_least_one_nonzero([0, 0, 5000, 0, 0]) is True
     assert at_least_one_nonzero([0, 0, 0, 0, 0]) is False
@@ -58,6 +63,13 @@ def test_validate_all_zero_fails():
 def test_validate_wrong_sign_fails():
     errors = validate_trade_quantities([0, -8760, 0, 0, 0], SIGN_POSITIVE)
     assert any("positiv" in e for e in errors)
+
+
+def test_validate_partner_sells_wrong_sign_fails():
+    # Partner verkauft erfordert negative Mengen; eine positive Menge muss
+    # die entsprechende Fehlermeldung ausloesen.
+    errors = validate_trade_quantities([0, 8760, 0, 0, 0], SIGN_NEGATIVE)
+    assert any("negativ" in e for e in errors)
 
 
 def test_validate_reports_both_problems():

@@ -6,8 +6,9 @@ Die fachliche Spezifikation liegt unter [`docs/specifications/`](docs/specificat
 Dieser Prototyp arbeitet ausschliesslich mit Mockdaten. SQLite ist die zentrale
 Mock-Datenschicht; die Excel-Dateien dienen nur als initiale Mockdatenquelle.
 
-> Status: **Projektgeruest angelegt.** Fachlogik ist noch nicht implementiert.
-> Die Umsetzung erfolgt schrittweise gemaess den Arbeitspaketen in
+> Status: **Arbeitspakete 1-8 umgesetzt.** Alle vier Seiten (Position, Preise,
+> Limitorder, Handelskalender), DB-Initialisierung, Default- und Excel-/PFC-Seed
+> sowie die Domain-Tests sind vorhanden. Die Umsetzung folgt den Arbeitspaketen in
 > `docs/specifications/05_umsetzungsplan_codex_claude.md` und
 > `docs/specifications/08_claude_code_prompts.md`.
 
@@ -54,6 +55,14 @@ streamlit run app.py
 
 ```bash
 pytest
+```
+
+Die zentrale Fachlogik (`src/domain`) ist bewusst ohne Streamlit/DB testbar.
+Testabdeckung optional messen:
+
+```bash
+coverage run --source=src -m pytest
+coverage report -m
 ```
 
 ## Projektstruktur

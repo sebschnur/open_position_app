@@ -595,7 +595,7 @@ def seed_database_from_excel(
         return ImportReport(warnings=[], already_seeded=True)
 
     today = today or dt.date.today()
-    now = dt.datetime.utcnow()
+    now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
     current_year = today.year
     all_warnings: List[str] = []
 
