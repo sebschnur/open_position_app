@@ -6,11 +6,11 @@ Die fachliche Spezifikation liegt unter [`docs/specifications/`](docs/specificat
 Dieser Prototyp arbeitet ausschliesslich mit Mockdaten. SQLite ist die zentrale
 Mock-Datenschicht; die Excel-Dateien dienen nur als initiale Mockdatenquelle.
 
-> Status: **Arbeitspakete 1-8 umgesetzt.** Alle vier Seiten (Position, Preise,
-> Limitorder, Handelskalender), DB-Initialisierung, Default- und Excel-/PFC-Seed
-> sowie die Domain-Tests sind vorhanden. Die Umsetzung folgt den Arbeitspaketen in
-> `docs/specifications/05_umsetzungsplan_codex_claude.md` und
-> `docs/specifications/08_claude_code_prompts.md`.
+> Status: **Prototyp abgeschlossen (Arbeitspakete 1-9).** Alle vier Seiten
+> (Position, Preise, Limitorder, Handelskalender), DB-Initialisierung, Default-
+> und Excel-/PFC-Seed sowie die Domain-Tests sind vorhanden und geprüft. Eine
+> Zusammenfassung des Abschlussdurchgangs steht in
+> [`docs/IMPLEMENTIERUNG.md`](docs/IMPLEMENTIERUNG.md).
 
 ## Architektur
 
