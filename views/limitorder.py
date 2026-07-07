@@ -22,10 +22,7 @@ from src.services.limit_order_service import (
     mark_deleted,
     mark_executed,
 )
-from src.ui_helpers import configure_wide_page
 from src.user_context import get_current_username
-
-configure_wide_page("Limitorder")
 
 st.title("Limitorder")
 

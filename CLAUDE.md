@@ -13,7 +13,7 @@ Aenderungshistorie: `docs/specifications/CHANGELOG.md`.
 ## Architektur & Schichten (strikt einhalten)
 
 ```
-Streamlit UI (app.py, pages/)
+Streamlit UI (app.py, views/)
   -> Services      (src/services)      Orchestrierung, committen, Row-Dataclasses fuer die UI
   -> Repositories  (src/repositories)  DB-Zugriff je Tabelle, KEIN commit (Aufrufer entscheidet)
   -> Models/DB     (src/db)            SQLAlchemy-Modelle, Engine/Session, Init/Seed
@@ -27,9 +27,15 @@ Domain-Logik (src/domain): reine Funktionen, KEIN Streamlit/DB-Import, voll unit
 
 ## Verzeichnisse
 
-- `pages/` — je Fachseite ein Skript: `1_Position`, `2_Preise`, `3_Limitorder`,
-  `4_Handelskalender`. Jede Seite ruft `configure_wide_page(...)` als ersten
-  Streamlit-Aufruf.
+- `app.py` — **einziger Einstiegspunkt**: setzt ueber `apply_global_layout()`
+  einmalig Wide-Layout + globales CSS und schaltet die Seiten via
+  `st.navigation`/`st.Page`. Weil `app.py` bei jedem Seitenwechsel durchlaeuft,
+  gelten Layout/CSS automatisch fuer alle Seiten — **keine Seite setzt das
+  selbst** (kein `set_page_config`/`configure_wide_page` in `views/`; per Test
+  `tests/test_layout_bootstrap.py` abgesichert).
+- `views/` — je Fachseite ein eigenstaendiges Skript: `position.py`, `preise.py`,
+  `limitorder.py`, `handelskalender.py`. Kein Zahlpraefix, kein magischer
+  `pages/`-Ordner mehr (Reihenfolge/Titel kommen aus `st.Page` in `app.py`).
 - `src/services/` — Anwendungslogik + `@dataclass`-Rows fuer die Anzeige.
 - `src/repositories/` — ein Modul je Tabelle, nur DB-Zugriff.
 - `src/domain/` — reine Fachlogik (`quantity_utils`, `position_logic`,

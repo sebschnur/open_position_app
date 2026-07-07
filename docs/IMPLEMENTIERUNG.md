@@ -6,7 +6,11 @@ Stand des Prototyps nach Abschluss der Arbeitspakete 1-9. Grundlage:
 
 ## Umgesetzte Funktionen
 
-- **Vier Streamlit-Seiten** (ohne separate Fachstartseite):
+- **Navigation** über `st.navigation`/`st.Page`: `app.py` ist der einzige
+  Einstiegspunkt, setzt Wide-Layout und globales CSS zentral über
+  `apply_global_layout()` und bindet die vier Seiten aus `views/` ein. Dadurch
+  gelten Layout/CSS auf allen Seiten, ohne dass eine Seite es setzen kann.
+- **Vier Streamlit-Seiten** (unter `views/`, schlichte Übersichts-Startseite):
   - **Position** – PMS-Position, untertägige Geschäfte und simulierte Position
     je Kalenderjahr (Y0–Y+4), Limit 1,00 MW auf Absolutwert, Auslastung und
     Hervorhebung bei Überschreitung. Einfügen/Löschen untertägiger Geschäfte.
@@ -51,8 +55,9 @@ Stand des Prototyps nach Abschluss der Arbeitspakete 1-9. Grundlage:
 - Reiner **Prototyp mit Mockdaten**; SQLite als Mock-Datenschicht.
 - **Eingabefelder** (`st.number_input`) zeigen den Dezimaltrenner technisch
   bedingt weiterhin als Punkt; die deutsche Formatierung betrifft nur die
-  Anzeige (Tabellen/Listen/Texte). Die +/- Schrittregler sind per CSS
-  ausgeblendet (Werte werden direkt eingetippt, siehe `configure_wide_page`).
+  Anzeige (Tabellen/Listen/Texte). Die +/- Schrittregler sind per globalem CSS
+  ausgeblendet (Werte werden direkt eingetippt, siehe `apply_global_layout` in
+  `src/ui_helpers.py`).
 - `scripts/seed_from_excel.py --db` wird ignoriert – es wird immer die in
   `src/config.py` konfigurierte Datenbank verwendet.
 - Zeitstempel werden als naives UTC gespeichert.

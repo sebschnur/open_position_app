@@ -22,10 +22,7 @@ from src.services.position_service import (
     get_intraday_trade_rows,
     get_position_table,
 )
-from src.ui_helpers import configure_wide_page
 from src.user_context import get_current_username
-
-configure_wide_page("Position")
 
 st.title("Position")
 

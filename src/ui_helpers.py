@@ -1,16 +1,18 @@
-"""Gemeinsame UI-Helfer fuer die Streamlit-Seiten.
+"""Gemeinsame UI-Helfer fuer die Streamlit-App.
 
-Streamlit fuehrt jede Datei unter ``pages/`` als eigenes Skript aus. Das in
-``app.py`` gesetzte ``layout="wide"`` gilt dort NICHT - ohne eigenen
-``set_page_config``-Aufruf rendern die Unterseiten im schmalen "centered"-
-Layout. Deshalb setzt jede Seite das Wide-Layout selbst.
+Layout und CSS werden zentral im Einstiegsskript ``app.py`` gesetzt - direkt
+bevor ``st.navigation(...).run()`` die gewaehlte Seite ausfuehrt. Weil ``app.py``
+bei jedem Seitenwechsel von oben durchlaeuft, gilt beides automatisch fuer jede
+Fachseite; eine einzelne Seite kann es nicht mehr vergessen (frueher musste jede
+Seite ``configure_wide_page`` selbst als ersten Aufruf setzen).
 """
 
 import streamlit as st
 
-# Button-Beschriftungen (z. B. "Ausgeführt", "Löschen") sollen nicht umbrechen.
-# Zusaetzlich werden die +/- Schrittregler der Zahlenfelder (st.number_input)
-# ausgeblendet - Werte werden direkt eingetippt.
+# Globales Seiten-CSS:
+# - Button-Beschriftungen (z. B. "Ausgeführt", "Löschen") nicht umbrechen.
+# - Die +/- Schrittregler der Zahlenfelder (st.number_input) ausblenden;
+#   Werte werden direkt eingetippt.
 _PAGE_CSS = """
 <style>
 .stButton button, .stFormSubmitButton button,
@@ -25,11 +27,13 @@ _PAGE_CSS = """
 """
 
 
-def configure_wide_page(page_title: str) -> None:
-    """Aktiviert Wide-Layout und das Seiten-CSS.
+def apply_global_layout() -> None:
+    """Aktiviert Wide-Layout und injiziert das globale Seiten-CSS.
 
-    Muss der erste Streamlit-Aufruf einer Seite sein (Vorgabe von
-    ``st.set_page_config``).
+    Muss der erste Streamlit-Aufruf der App sein (Vorgabe von
+    ``st.set_page_config``) und wird ausschliesslich in ``app.py`` aufgerufen -
+    NICHT je Seite. So ist sichergestellt, dass Layout und CSS auf allen Seiten
+    greifen, ohne dass eine Seite den Aufruf vergessen kann.
     """
-    st.set_page_config(page_title=page_title, layout="wide")
+    st.set_page_config(page_title="Energiehandels-Prototyp", layout="wide")
     st.markdown(_PAGE_CSS, unsafe_allow_html=True)

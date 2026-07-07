@@ -15,7 +15,7 @@ Mock-Datenschicht; die Excel-Dateien dienen nur als initiale Mockdatenquelle.
 ## Architektur
 
 ```text
-Streamlit UI (app.py, pages/)
+Streamlit UI (app.py + views/, Navigation ueber st.navigation)
   -> Services (src/services)
   -> Repositories (src/repositories)
   -> SQLAlchemy / SQLite (src/db)

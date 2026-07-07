@@ -64,3 +64,19 @@
   Mockdaten neu erzeugt.
 - **UI**: Die +/- Schrittregler der Zahlenfelder (`st.number_input`) werden per
   CSS in `configure_wide_page` ausgeblendet; Werte werden direkt eingetippt.
+
+## Ergänzung: Zentrale Navigation (`st.navigation`) statt `pages/`-Automatik
+
+- **Architektur**: Die App nutzt jetzt `st.navigation`/`st.Page`. `app.py` ist
+  der einzige Einstiegspunkt und setzt Wide-Layout + globales CSS **einmalig**
+  über `apply_global_layout()`. Da `app.py` bei jedem Seitenwechsel durchläuft,
+  gelten Layout/CSS automatisch für alle Seiten.
+- **Grund**: Zuvor musste jede Seite `configure_wide_page(...)` selbst als ersten
+  Aufruf setzen – die Preise-Seite hatte das vergessen (kein CSS, kein Wide-
+  Layout). Die neue Struktur macht das Vergessen unmöglich.
+- Die vier Seiten liegen nun als eigenständige Skripte unter `views/`
+  (`position.py`, `preise.py`, `limitorder.py`, `handelskalender.py`) statt im
+  magischen `pages/`-Ordner; `configure_wide_page` entfällt, `ui_helpers` stellt
+  `apply_global_layout()` bereit.
+- Neuer Test `tests/test_layout_bootstrap.py` sichert die Invariante ab (keine
+  Seite setzt Layout/Page-Config selbst; `app.py` bootstrappt Layout + Navigation).

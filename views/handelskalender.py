@@ -21,10 +21,7 @@ from src.services.trading_calendar_service import (
     mark_deleted,
     mark_done,
 )
-from src.ui_helpers import configure_wide_page
 from src.user_context import get_current_username
-
-configure_wide_page("Handelskalender")
 
 st.title("Handelskalender")
 
