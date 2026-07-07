@@ -22,7 +22,10 @@ from src.services.price_service import (
     get_price_table,
     save_prices_and_surcharges,
 )
+from src.ui_helpers import configure_wide_page
 from src.user_context import get_current_username
+
+configure_wide_page("Preise")
 
 st.title("Preise / Vertriebsinfos")
 

@@ -59,11 +59,6 @@ def add_limit_order(
         trigger_delivery_year=trigger_delivery_year,
         trigger_condition=trigger_condition,
         limit_price_eur_mwh=limit_price_eur_mwh,
-        # "Verantwortlicher" ist obsolet (siehe Modelldoku); die Spalten werden
-        # aus Kompatibilitaet mit bestehenden NOT-NULL-Datenbanken mit dem
-        # aktuellen Benutzernamen befuellt. Nachvollziehbarkeit: last_modified_by.
-        responsible_trading=last_modified_by,
-        responsible_sales=last_modified_by,
         valid_until=valid_until,
         status=STATUS_OPEN,
         last_modified_by=last_modified_by,

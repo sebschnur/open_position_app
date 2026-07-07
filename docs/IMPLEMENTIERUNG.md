@@ -51,7 +51,8 @@ Stand des Prototyps nach Abschluss der Arbeitspakete 1-9. Grundlage:
 - Reiner **Prototyp mit Mockdaten**; SQLite als Mock-Datenschicht.
 - **Eingabefelder** (`st.number_input`) zeigen den Dezimaltrenner technisch
   bedingt weiterhin als Punkt; die deutsche Formatierung betrifft nur die
-  Anzeige (Tabellen/Listen/Texte).
+  Anzeige (Tabellen/Listen/Texte). Die +/- Schrittregler sind per CSS
+  ausgeblendet (Werte werden direkt eingetippt, siehe `configure_wide_page`).
 - `scripts/seed_from_excel.py --db` wird ignoriert – es wird immer die in
   `src/config.py` konfigurierte Datenbank verwendet.
 - Zeitstempel werden als naives UTC gespeichert.
@@ -88,9 +89,10 @@ coverage run --source=src -m pytest && coverage report -m
 
 - Herkunft der **Peak-Settlementpreise**: aktuell Default-Mockwerte, da nicht in
   der Excel-Mockdatei enthalten – bei Produktivnutzung zu klären.
-- **Verantwortliche (Handel/Vertrieb)** sind als Eingabefeld obsolet (ersetzt
-  durch `last_modified_by`). Die DB-Spalten bleiben optional erhalten; beim
-  Excel-Import werden sie mangels Quelldaten weiterhin mit Platzhaltern befüllt.
+- **Verantwortliche (Handel/Vertrieb)** sind vollständig entfallen (ersetzt
+  durch `last_modified_by`). Die DB-Spalten `responsible_trading`/
+  `responsible_sales` wurden aus Modell, Import und Datenbank entfernt; eine
+  Migration in `init_db()` bereinigt bestehende Datenbanken.
 - Da kein separates Login existiert, ist der „aktuelle Benutzer“ der OS-Benutzer
   des App-Prozesses. Für Mehrbenutzerbetrieb über einen zentralen Server wäre
   eine echte Authentifizierung nötig, um einzelne Bearbeiter zu unterscheiden.

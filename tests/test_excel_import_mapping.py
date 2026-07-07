@@ -120,7 +120,7 @@ def test_trading_calendar_maps_kauf_to_positive_quantities(workbook):
     assert warnings == []
 
 
-def test_limit_orders_only_import_kauf_limit_with_default_responsibles(workbook):
+def test_limit_orders_only_import_kauf_limit(workbook):
     seeds, warnings = read_limit_orders_from_excel(workbook, CURRENT_YEAR)
 
     assert len(seeds) == 2
@@ -130,9 +130,6 @@ def test_limit_orders_only_import_kauf_limit_with_default_responsibles(workbook)
     assert bau_ag.trigger_condition == "partner_buys_price_lt_limit"
     assert bau_ag.limit_price_eur_mwh == pytest.approx(90.0)
     assert bau_ag.quantity_y1_mwh == pytest.approx(8760.0)
-    assert bau_ag.responsible_trading == "Handel (Default Import)"
-    assert bau_ag.responsible_sales == "Vertrieb (Default Import)"
-    assert any("Verantwortlicher Handel/Vertrieb" in w for w in warnings)
 
     # Malermeister A: Peak 2028, gueltig-bis liegt bereits vor "heute" (TODAY)
     # - wird trotzdem als "offen" importiert (kein automatisches "abgelaufen",
@@ -166,7 +163,7 @@ def test_seed_database_from_excel_populates_all_tables(session):
     session.commit()
 
     assert report.already_seeded is False
-    assert len(report.warnings) >= 3  # Peak-Settlement-Default + 2x fehlende Verantwortliche
+    assert any("Peak-Settlementpreise" in w for w in report.warnings)
     assert session.query(PortfolioPosition).count() == 5
     assert session.query(IntradayTrade).count() == 2
     assert session.query(MarketPrice).count() == 6

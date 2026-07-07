@@ -3,10 +3,15 @@
 create_all() legt nur fehlende Tabellen an und ueberschreibt keine
 vorhandenen Daten - eine bestehende Datenbank bleibt unangetastet.
 
-Zusaetzlich wird eine leichte Migration ausgefuehrt, die die Spalte
-``last_modified_by`` (Nachvollziehbarkeit manueller Eintraege) in bereits
-bestehenden Tabellen nachtraeglich ergaenzt. create_all() kann fehlende
-Spalten naemlich nicht nachziehen.
+Zusaetzlich werden leichte Migrationen ausgefuehrt, die
+
+- die Spalte ``last_modified_by`` (Nachvollziehbarkeit manueller Eintraege) in
+  bereits bestehenden Tabellen nachtraeglich ergaenzen und
+- die obsoleten Spalten ``responsible_trading``/``responsible_sales`` aus der
+  Tabelle ``limit_orders`` entfernen (die Nachvollziehbarkeit erfolgt jetzt
+  ausschliesslich ueber ``last_modified_by``).
+
+create_all() kann weder fehlende Spalten nachziehen noch obsolete entfernen.
 """
 
 from src.config import DATA_DIR, DB_PATH
@@ -37,6 +42,27 @@ def _ensure_last_modified_by_columns() -> None:
                 )
 
 
+# Obsolete Spalten der Tabelle ``limit_orders`` - werden aus bestehenden
+# Datenbanken entfernt, damit sie eine spaetere Migration nicht stoeren.
+_OBSOLETE_LIMIT_ORDER_COLUMNS = ("responsible_trading", "responsible_sales")
+
+
+def _drop_obsolete_responsible_columns() -> None:
+    """Entfernt die obsoleten Verantwortlichen-Spalten aus ``limit_orders``.
+
+    SQLite unterstuetzt ``ALTER TABLE ... DROP COLUMN`` ab Version 3.35. Ist die
+    Laufzeit aelter, wird die Spalte einfach belassen - im Prototyp wird die DB
+    ohnehin aus Mockdaten neu erzeugt.
+    """
+    with engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(limit_orders)")}
+        if not columns:
+            return  # Tabelle existiert (noch) nicht - create_all legt sie neu an.
+        for column in _OBSOLETE_LIMIT_ORDER_COLUMNS:
+            if column in columns:
+                conn.exec_driver_sql(f"ALTER TABLE limit_orders DROP COLUMN {column}")
+
+
 def init_db() -> bool:
     """Erzeugt das DB-Schema, falls noch nicht vorhanden.
 
@@ -46,4 +72,5 @@ def init_db() -> bool:
     db_existed = DB_PATH.exists()
     Base.metadata.create_all(bind=engine)
     _ensure_last_modified_by_columns()
+    _drop_obsolete_responsible_columns()
     return db_existed

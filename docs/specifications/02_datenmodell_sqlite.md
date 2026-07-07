@@ -189,8 +189,6 @@ Speichert Limitorders.
 | `trigger_delivery_year` | Integer | Lieferjahr des Trigger-Preises |
 | `trigger_condition` | String | siehe unten |
 | `limit_price_eur_mwh` | Numeric | Limitpreis |
-| `responsible_trading` | String nullable | **obsolet**, siehe Hinweis; für Altbestand/Import erhalten |
-| `responsible_sales` | String nullable | **obsolet**, siehe Hinweis; für Altbestand/Import erhalten |
 | `valid_until` | Date nullable | optionales Gültigkeitsdatum |
 | `status` | String | `offen`, `ausgeführt`, `gelöscht`, `abgelaufen` |
 | `last_modified_by` | String | Benutzer der letzten Änderung (Nachvollziehbarkeit) |
@@ -198,11 +196,13 @@ Speichert Limitorders.
 | `updated_at` | DateTime | Änderungszeitpunkt |
 
 Hinweis: Das frühere Pflichtfeld „Verantwortlicher“ (`responsible_trading` /
-`responsible_sales`) ist obsolet – die Nachvollziehbarkeit erfolgt jetzt
-ausschließlich über `last_modified_by`. Die UI fragt es nicht mehr ab. Die
-Spalten sind nun optional (nullable); der interaktive Anlage-Pfad befüllt sie
-aus Kompatibilität mit bestehenden `NOT NULL`-Datenbanken mit dem aktuellen
-Benutzernamen, der Excel-Import mit Default-Platzhaltern.
+`responsible_sales`) wurde **vollständig entfernt** – die Nachvollziehbarkeit
+erfolgt ausschließlich über `last_modified_by`. Die UI fragt es nicht mehr ab
+und das Modell führt die Spalten nicht mehr. Bestehende Datenbanken werden beim
+Start durch eine leichte Migration in `init_db()` bereinigt
+(`ALTER TABLE limit_orders DROP COLUMN …`, siehe
+`_drop_obsolete_responsible_columns`), damit die obsoleten Spalten eine spätere
+Migration ins Zielsystem nicht stören.
 
 ### 11.1 Erlaubte `trigger_condition`-Werte
 

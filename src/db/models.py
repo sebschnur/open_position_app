@@ -147,11 +147,9 @@ class LimitOrder(Base):
     trigger_delivery_year: Mapped[int] = mapped_column(Integer, nullable=False)
     trigger_condition: Mapped[str] = mapped_column(String(40), nullable=False)
     limit_price_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
-    # "Verantwortlicher" ist obsolet: die Nachvollziehbarkeit erfolgt jetzt
-    # ausschliesslich ueber last_modified_by. Die Spalten bleiben (nun optional)
-    # fuer bestehende Daten und den Excel-Import erhalten.
-    responsible_trading: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
-    responsible_sales: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    # Frueher gab es hier "responsible_trading"/"responsible_sales". Diese Felder
+    # sind entfallen - die Nachvollziehbarkeit erfolgt ausschliesslich ueber
+    # last_modified_by. Bestehende Datenbanken bereinigt init_db per Migration.
     valid_until: Mapped[Optional[dt.date]] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="offen")
     last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")

@@ -9,11 +9,17 @@ Layout. Deshalb setzt jede Seite das Wide-Layout selbst.
 import streamlit as st
 
 # Button-Beschriftungen (z. B. "Ausgeführt", "Löschen") sollen nicht umbrechen.
+# Zusaetzlich werden die +/- Schrittregler der Zahlenfelder (st.number_input)
+# ausgeblendet - Werte werden direkt eingetippt.
 _PAGE_CSS = """
 <style>
 .stButton button, .stFormSubmitButton button,
 [data-testid="stButton"] button, [data-testid="stFormSubmitButton"] button {
     white-space: nowrap;
+}
+[data-testid="stNumberInputStepUp"],
+[data-testid="stNumberInputStepDown"] {
+    display: none;
 }
 </style>
 """

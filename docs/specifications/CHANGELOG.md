@@ -49,3 +49,18 @@
 - Mengen-Spaltenköpfe zeigen konkrete Jahre (z. B. 2026…2030) statt Y0…Y4.
 - **Preise**: breiterer optischer Abstand zwischen Base- und Peak-Block; beim
   Speichern werden Chat- und Mailtext automatisch neu erzeugt (Buttons bleiben).
+
+## Ergänzung: Aufräumen `limit_orders` und Zahlenfeld-Optik
+
+- **DB**: Die obsoleten Spalten `responsible_trading`/`responsible_sales` der
+  Tabelle `limit_orders` wurden **vollständig entfernt** (Modell, Repository,
+  Excel-Import, Tests). Die Nachvollziehbarkeit erfolgt ausschließlich über
+  `last_modified_by`. Grund: die obsoleten Spalten sollen eine spätere Migration
+  ins Zielsystem nicht stören.
+- **Migration**: `init_db()` entfernt die Spalten aus bestehenden Datenbanken
+  (`ALTER TABLE limit_orders DROP COLUMN …`, siehe
+  `_drop_obsolete_responsible_columns`; SQLite ≥ 3.35). Bei älterer SQLite-
+  Laufzeit bleiben die Spalten stehen – im Prototyp wird die DB ohnehin aus
+  Mockdaten neu erzeugt.
+- **UI**: Die +/- Schrittregler der Zahlenfelder (`st.number_input`) werden per
+  CSS in `configure_wide_page` ausgeblendet; Werte werden direkt eingetippt.

@@ -12,8 +12,8 @@ Bewusste Entscheidungen (siehe Projekt-Memory / bestaetigte Klaerpunkte):
   wichtig fuer stillschweigend erfundene Werte - stattdessen nur Warnung).
 - Limitorder: nur "Kauf-Limit" wird unterstuetzt (-> partner_buys_price_lt_limit,
   siehe bestaetigter Klaerpunkt zu `<=`). "Verkauf-Limit" wird ignoriert und
-  gemeldet. Verantwortlicher Handel/Vertrieb fehlen in der Excel-Datei und
-  werden als klar gekennzeichneter Default-Platzhalter gesetzt.
+  gemeldet. Ein "Verantwortlicher Handel/Vertrieb" wird nicht mehr gespeichert -
+  Nachvollziehbarkeit erfolgt ausschliesslich ueber last_modified_by.
 - Settlementpreise: nur Base kommt aus Excel, Peak ist immer ein Default.
 - Kein automatisches Setzen von Status "abgelaufen" bei bereits verstrichenem
   `valid_until` - dieser Status ist laut Spezifikation noch nicht geklaert
@@ -140,8 +140,6 @@ class LimitOrderSeed:
     trigger_delivery_year: int
     trigger_condition: str
     limit_price_eur_mwh: float
-    responsible_trading: str
-    responsible_sales: str
     valid_until: Optional[dt.date]
 
 
@@ -548,11 +546,6 @@ def read_limit_orders_from_excel(
             )
             continue
 
-        warnings.append(
-            f"'{_LIMIT_ORDER_SHEET}' Zeile {row} ('{partner_alias}'): Verantwortlicher Handel/Vertrieb "
-            "nicht in Excel vorhanden, Default-Platzhalter wird verwendet."
-        )
-
         valid_until = None
         if isinstance(valid_until_value, dt.datetime):
             valid_until = valid_until_value.date()
@@ -571,8 +564,6 @@ def read_limit_orders_from_excel(
                 trigger_delivery_year=delivery_year,
                 trigger_condition=trigger_condition,
                 limit_price_eur_mwh=limit_price,
-                responsible_trading="Handel (Default Import)",
-                responsible_sales="Vertrieb (Default Import)",
                 valid_until=valid_until,
             )
         )
@@ -685,8 +676,6 @@ def seed_database_from_excel(
                 trigger_delivery_year=seed.trigger_delivery_year,
                 trigger_condition=seed.trigger_condition,
                 limit_price_eur_mwh=seed.limit_price_eur_mwh,
-                responsible_trading=seed.responsible_trading,
-                responsible_sales=seed.responsible_sales,
                 valid_until=seed.valid_until,
                 status="offen",
                 last_modified_by=SOURCE_LABEL,
