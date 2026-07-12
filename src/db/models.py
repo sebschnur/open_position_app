@@ -9,7 +9,6 @@ nicht beim Speichern.
 """
 
 import datetime as dt
-from typing import Optional
 
 from sqlalchemy import Date, DateTime, Float, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
@@ -21,7 +20,7 @@ def _utcnow() -> dt.datetime:
     # Naiver UTC-Zeitstempel. dt.datetime.utcnow() ist ab Python 3.12
     # deprecated; die tz-bewusste Variante wird bewusst wieder auf naiv
     # reduziert, damit sich das gespeicherte Format nicht aendert.
-    return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    return dt.datetime.now(dt.UTC).replace(tzinfo=None)
 
 
 class PortfolioPosition(Base):
@@ -34,7 +33,9 @@ class PortfolioPosition(Base):
     year: Mapped[int] = mapped_column(Integer, nullable=False)
     position_mwh: Mapped[float] = mapped_column(Float, nullable=False)
     source: Mapped[str] = mapped_column(String(50), nullable=False)
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
     )
@@ -54,9 +55,13 @@ class IntradayTrade(Base):
     quantity_y3_mwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     quantity_y4_mwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     source_type: Mapped[str] = mapped_column(String(30), nullable=False)
-    source_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    source_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    last_modified_by: Mapped[str] = mapped_column(
+        String(120), nullable=False, default="system"
+    )
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
 
 
 class MarketPrice(Base):
@@ -64,7 +69,9 @@ class MarketPrice(Base):
 
     __tablename__ = "market_prices"
     __table_args__ = (
-        UniqueConstraint("product_type", "delivery_year", name="uq_market_prices_product_year"),
+        UniqueConstraint(
+            "product_type", "delivery_year", name="uq_market_prices_product_year"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -72,8 +79,12 @@ class MarketPrice(Base):
     delivery_year: Mapped[int] = mapped_column(Integer, nullable=False)
     price_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
     price_timestamp: Mapped[dt.datetime] = mapped_column(DateTime, nullable=False)
-    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    last_modified_by: Mapped[str] = mapped_column(
+        String(120), nullable=False, default="system"
+    )
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
     )
@@ -84,15 +95,21 @@ class OtcSurcharge(Base):
 
     __tablename__ = "otc_surcharges"
     __table_args__ = (
-        UniqueConstraint("product_type", "delivery_year", name="uq_otc_surcharges_product_year"),
+        UniqueConstraint(
+            "product_type", "delivery_year", name="uq_otc_surcharges_product_year"
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     product_type: Mapped[str] = mapped_column(String(10), nullable=False)
     delivery_year: Mapped[int] = mapped_column(Integer, nullable=False)
     surcharge_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
-    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    last_modified_by: Mapped[str] = mapped_column(
+        String(120), nullable=False, default="system"
+    )
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
     )
@@ -109,7 +126,9 @@ class SettlementPrice(Base):
     settlement_date: Mapped[dt.date] = mapped_column(Date, nullable=False)
     settlement_price_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
     settlement_timestamp: Mapped[dt.datetime] = mapped_column(DateTime, nullable=False)
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
     )
@@ -125,7 +144,9 @@ class PfcCheck(Base):
     delivery_year: Mapped[int] = mapped_column(Integer, nullable=False)
     pfc_mean_eur_mwh: Mapped[float] = mapped_column(Float, nullable=False)
     pfc_file_timestamp: Mapped[dt.datetime] = mapped_column(DateTime, nullable=False)
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
     )
@@ -150,10 +171,14 @@ class LimitOrder(Base):
     # Frueher gab es hier "responsible_trading"/"responsible_sales". Diese Felder
     # sind entfallen - die Nachvollziehbarkeit erfolgt ausschliesslich ueber
     # last_modified_by. Bestehende Datenbanken bereinigt init_db per Migration.
-    valid_until: Mapped[Optional[dt.date]] = mapped_column(Date, nullable=True)
+    valid_until: Mapped[dt.date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="offen")
-    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    last_modified_by: Mapped[str] = mapped_column(
+        String(120), nullable=False, default="system"
+    )
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
     )
@@ -174,8 +199,12 @@ class TradingCalendarEntry(Base):
     quantity_y3_mwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     quantity_y4_mwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="geplant")
-    last_modified_by: Mapped[str] = mapped_column(String(120), nullable=False, default="system")
-    created_at: Mapped[dt.datetime] = mapped_column(DateTime, default=_utcnow, nullable=False)
+    last_modified_by: Mapped[str] = mapped_column(
+        String(120), nullable=False, default="system"
+    )
+    created_at: Mapped[dt.datetime] = mapped_column(
+        DateTime, default=_utcnow, nullable=False
+    )
     updated_at: Mapped[dt.datetime] = mapped_column(
         DateTime, default=_utcnow, onupdate=_utcnow, nullable=False
     )

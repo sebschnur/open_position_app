@@ -1,7 +1,6 @@
 """Repository fuer limit_orders."""
 
 import datetime as dt
-from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -14,7 +13,7 @@ STATUS_DELETED = "gelöscht"
 STATUS_EXPIRED = "abgelaufen"
 
 
-def list_open_limit_orders(session: Session) -> List[LimitOrder]:
+def list_open_limit_orders(session: Session) -> list[LimitOrder]:
     """Liefert alle offenen Limitorders; aktuellstes 'gueltig bis' zuerst.
 
     Eintraege ohne 'gueltig bis' (NULL) sortiert SQLite bei DESC ans Ende;
@@ -28,7 +27,7 @@ def list_open_limit_orders(session: Session) -> List[LimitOrder]:
     return list(session.scalars(stmt))
 
 
-def get_limit_order(session: Session, order_id: int) -> Optional[LimitOrder]:
+def get_limit_order(session: Session, order_id: int) -> LimitOrder | None:
     return session.get(LimitOrder, order_id)
 
 
@@ -45,7 +44,7 @@ def add_limit_order(
     trigger_condition: str,
     limit_price_eur_mwh: float,
     last_modified_by: str = "system",
-    valid_until: Optional[dt.date] = None,
+    valid_until: dt.date | None = None,
 ) -> LimitOrder:
     """Legt eine neue Limitorder an (kein Commit - Aufrufer entscheidet)."""
     order = LimitOrder(
@@ -70,7 +69,7 @@ def add_limit_order(
 
 def set_status(
     session: Session, order_id: int, status: str, last_modified_by: str = "system"
-) -> Optional[LimitOrder]:
+) -> LimitOrder | None:
     """Setzt Status und letzten Bearbeiter einer Limitorder (kein Commit)."""
     order = session.get(LimitOrder, order_id)
     if order is not None:

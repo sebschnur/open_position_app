@@ -14,7 +14,6 @@ import datetime as dt
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import openpyxl
 
@@ -33,16 +32,16 @@ class PfcCheckSeed:
 
 
 def read_pfc_checks_from_files(
-    pfc_dir: Path, current_year: int, today: Optional[dt.date] = None
-) -> Tuple[List[PfcCheckSeed], List[str]]:
+    pfc_dir: Path, current_year: int, today: dt.date | None = None
+) -> tuple[list[PfcCheckSeed], list[str]]:
     """Liest PFC-Mittelwerte fuer Base Y+1 bis Y+3 aus dem PFC-Verzeichnis.
 
     Gibt (seeds, warnings) zurueck. Fehlende/ungueltige Werte werden durch
     Default-Mockdaten aus `default_mock_values.BASE_PFC_MEAN` ersetzt.
     """
     today = today or dt.date.today()
-    warnings: List[str] = []
-    found_by_year: Dict[int, Tuple[float, dt.datetime]] = {}
+    warnings: list[str] = []
+    found_by_year: dict[int, tuple[float, dt.datetime]] = {}
     dir_exists = pfc_dir.is_dir()
 
     if dir_exists:
@@ -79,7 +78,7 @@ def read_pfc_checks_from_files(
             f"PFC-Verzeichnis '{pfc_dir}' nicht gefunden - Default-Mockwerte werden verwendet."
         )
 
-    seeds: List[PfcCheckSeed] = []
+    seeds: list[PfcCheckSeed] = []
     for offset in (1, 2, 3):
         year = current_year + offset
         if year in found_by_year:
@@ -111,7 +110,7 @@ def read_pfc_checks_from_files(
     return seeds, warnings
 
 
-def _read_d2(path: Path) -> Optional[float]:
+def _read_d2(path: Path) -> float | None:
     try:
         workbook = openpyxl.load_workbook(path, data_only=True, read_only=True)
         try:

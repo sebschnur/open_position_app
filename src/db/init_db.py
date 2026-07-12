@@ -32,7 +32,9 @@ def _ensure_last_modified_by_columns() -> None:
     """Ergaenzt fehlende last_modified_by-Spalten in bestehenden Tabellen."""
     with engine.begin() as conn:
         for table in _LAST_MODIFIED_BY_TABLES:
-            columns = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+            columns = {
+                row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")
+            }
             if not columns:
                 continue  # Tabelle existiert (noch) nicht - create_all legt sie neu an.
             if "last_modified_by" not in columns:
@@ -55,7 +57,9 @@ def _drop_obsolete_responsible_columns() -> None:
     ohnehin aus Mockdaten neu erzeugt.
     """
     with engine.begin() as conn:
-        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(limit_orders)")}
+        columns = {
+            row[1] for row in conn.exec_driver_sql("PRAGMA table_info(limit_orders)")
+        }
         if not columns:
             return  # Tabelle existiert (noch) nicht - create_all legt sie neu an.
         for column in _OBSOLETE_LIMIT_ORDER_COLUMNS:

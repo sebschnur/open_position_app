@@ -1,16 +1,19 @@
 """Repository fuer trading_calendar."""
 
 import datetime as dt
-from typing import List, Optional
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.db.models import TradingCalendarEntry
-from src.domain.trading_calendar_logic import STATUS_DELETED, STATUS_DONE, STATUS_PLANNED
+from src.domain.trading_calendar_logic import (
+    STATUS_DELETED,
+    STATUS_DONE,
+    STATUS_PLANNED,
+)
 
 
-def list_visible_calendar_entries(session: Session) -> List[TradingCalendarEntry]:
+def list_visible_calendar_entries(session: Session) -> list[TradingCalendarEntry]:
     """Liefert alle nicht erledigten/geloeschten Eintraege, faelligste zuerst."""
     stmt = (
         select(TradingCalendarEntry)
@@ -20,7 +23,7 @@ def list_visible_calendar_entries(session: Session) -> List[TradingCalendarEntry
     return list(session.scalars(stmt))
 
 
-def get_calendar_entry(session: Session, entry_id: int) -> Optional[TradingCalendarEntry]:
+def get_calendar_entry(session: Session, entry_id: int) -> TradingCalendarEntry | None:
     return session.get(TradingCalendarEntry, entry_id)
 
 
@@ -56,7 +59,7 @@ def add_calendar_entry(
 
 def set_status(
     session: Session, entry_id: int, status: str, last_modified_by: str = "system"
-) -> Optional[TradingCalendarEntry]:
+) -> TradingCalendarEntry | None:
     """Setzt Status und letzten Bearbeiter eines Kalendereintrags (kein Commit)."""
     entry = session.get(TradingCalendarEntry, entry_id)
     if entry is not None:

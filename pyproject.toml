@@ -1,0 +1,52 @@
+# Tool-Konfiguration (kein Packaging).
+# Bewusst ohne [build-system]/[project]: dieses File konfiguriert nur die
+# Qualitaets-Gates (Ruff, mypy, pytest). Das Projekt bleibt beim bestehenden
+# requirements.txt-/src-Layout-Workflow.
+#
+# Hausstandard (abgeleitet in stack-analyse/docs/synthese.md):
+#   Formatter Black-kompatibel, line-length 88; Ruff als Linter; mypy; pytest.
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"  # Hausstandard 3.12 (lokale venv laeuft aktuell 3.14)
+extend-exclude = [".venv", "data", "docs"]
+
+[tool.ruff.lint]
+# Bewusst schlanker Einstieg fuer Bestandscode. Spaeter erweiterbar
+# (z. B. "SIM", "C4", "PL"). Formatierung uebernimmt ruff-format (Black-kompatibel).
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    # Zeilenlaenge: der Formatter (ruff-format, 88) besitzt die Code-Breite.
+    # Verbleibende Faelle sind lange Docstrings/Kommentare, die der Formatter
+    # bewusst nicht umbricht - nicht als Lint-Fehler fuehren.
+    "E501",
+    # isinstance(x, (A, B)) -> isinstance(x, A | B): von Ruff deprecated
+    # (Union-Form kann zur Laufzeit langsamer sein). Bewusst nicht erzwingen.
+    "UP038",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["src"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests duerfen laenger/lockerer sein.
+"tests/**" = ["E501"]
+
+[tool.ruff.format]
+# Black-kompatibel; doppelte Anfuehrungszeichen, 88 Zeichen.
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+# Einstieg bewusst tolerant fuer Bestandscode; Strenge spaeter hochziehen
+# (disallow_untyped_defs = true).
+ignore_missing_imports = true       # streamlit/openpyxl liefern teils keine Stubs
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+no_implicit_optional = true
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

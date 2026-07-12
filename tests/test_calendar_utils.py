@@ -8,12 +8,12 @@ from src.domain.calendar_utils import hours_in_year, is_leap_year
 @pytest.mark.parametrize(
     "year, expected",
     [
-        (2024, True),   # durch 4 teilbar
+        (2024, True),  # durch 4 teilbar
         (2025, False),
         (2026, False),
         (2028, True),
         (1900, False),  # durch 100, nicht durch 400
-        (2000, True),   # durch 400
+        (2000, True),  # durch 400
         (2100, False),  # durch 100, nicht durch 400
     ],
 )

@@ -6,7 +6,6 @@ Vorgabe: docs/specifications/01_fachliche_funktionen.md (Abschnitt 8-10),
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -35,8 +34,8 @@ class PriceRow:
     market_price_eur_mwh: float
     otc_surcharge_eur_mwh: float
     final_price_eur_mwh: float
-    settlement_price_eur_mwh: Optional[float]
-    difference_eur_mwh: Optional[float]
+    settlement_price_eur_mwh: float | None
+    difference_eur_mwh: float | None
 
 
 @dataclass
@@ -44,10 +43,10 @@ class PfcCheckRow:
     delivery_year: int
     label: str
     pfc_mean_eur_mwh: float
-    settlement_price_eur_mwh: Optional[float]
-    difference_eur_mwh: Optional[float]
+    settlement_price_eur_mwh: float | None
+    difference_eur_mwh: float | None
     pfc_file_timestamp: dt.datetime
-    settlement_timestamp: Optional[dt.datetime]
+    settlement_timestamp: dt.datetime | None
 
 
 def _offset_from_label(label: str) -> int:
@@ -58,7 +57,7 @@ def _product_label(product_type: str, delivery_year: int) -> str:
     return f"{product_type} {delivery_year}"
 
 
-def get_price_table(session: Session, today: Optional[dt.date] = None) -> List[PriceRow]:
+def get_price_table(session: Session, today: dt.date | None = None) -> list[PriceRow]:
     """Liefert die Preistabelle in der Anzeige-Reihenfolge (Base Y+1..Y+3, Peak Y+1..Y+3)."""
     today = today or dt.date.today()
     current_year = today.year
@@ -76,11 +75,19 @@ def get_price_table(session: Session, today: Optional[dt.date] = None) -> List[P
         surcharge_entry = surcharges.get(key)
         settlement_entry = settlements.get(key)
 
-        market_price_value = round_price(market_price_entry.price_eur_mwh if market_price_entry else 0.0)
-        surcharge_value = round_price(surcharge_entry.surcharge_eur_mwh if surcharge_entry else 0.0)
-        final_price_value = round_price(final_price(market_price_value, surcharge_value))
+        market_price_value = round_price(
+            market_price_entry.price_eur_mwh if market_price_entry else 0.0
+        )
+        surcharge_value = round_price(
+            surcharge_entry.surcharge_eur_mwh if surcharge_entry else 0.0
+        )
+        final_price_value = round_price(
+            final_price(market_price_value, surcharge_value)
+        )
         settlement_value = (
-            round_price(settlement_entry.settlement_price_eur_mwh) if settlement_entry else None
+            round_price(settlement_entry.settlement_price_eur_mwh)
+            if settlement_entry
+            else None
         )
         difference_value = settlement_difference(final_price_value, settlement_value)
         if difference_value is not None:
@@ -103,9 +110,9 @@ def get_price_table(session: Session, today: Optional[dt.date] = None) -> List[P
 
 def save_prices_and_surcharges(
     session: Session,
-    entries: List[Dict],
+    entries: list[dict],
     username: str = "system",
-    now: Optional[dt.datetime] = None,
+    now: dt.datetime | None = None,
 ) -> None:
     """Speichert Marktpreise und OTC-Aufschlaege gemeinsam - kein getrennter Speichern-Button.
 
@@ -113,7 +120,7 @@ def save_prices_and_surcharges(
     "market_price_eur_mwh", "otc_surcharge_eur_mwh". ``username`` wird als
     letzter Bearbeiter gespeichert (Nachvollziehbarkeit).
     """
-    now = now or dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    now = now or dt.datetime.now(dt.UTC).replace(tzinfo=None)
     for entry in entries:
         upsert_market_price(
             session,
@@ -133,7 +140,9 @@ def save_prices_and_surcharges(
     session.commit()
 
 
-def get_pfc_check_rows(session: Session, today: Optional[dt.date] = None) -> List[PfcCheckRow]:
+def get_pfc_check_rows(
+    session: Session, today: dt.date | None = None
+) -> list[PfcCheckRow]:
     """PFC-Pruefung bezieht sich im Prototyp nur auf Base Y+1 bis Y+3."""
     today = today or dt.date.today()
     current_year = today.year
@@ -150,7 +159,9 @@ def get_pfc_check_rows(session: Session, today: Optional[dt.date] = None) -> Lis
 
         settlement_entry = settlements.get(("Base", delivery_year))
         settlement_value = (
-            round_price(settlement_entry.settlement_price_eur_mwh) if settlement_entry else None
+            round_price(settlement_entry.settlement_price_eur_mwh)
+            if settlement_entry
+            else None
         )
         pfc_value = round_price(pfc_entry.pfc_mean_eur_mwh)
         difference_value = settlement_difference(pfc_value, settlement_value)
@@ -165,19 +176,25 @@ def get_pfc_check_rows(session: Session, today: Optional[dt.date] = None) -> Lis
                 settlement_price_eur_mwh=settlement_value,
                 difference_eur_mwh=difference_value,
                 pfc_file_timestamp=pfc_entry.pfc_file_timestamp,
-                settlement_timestamp=settlement_entry.settlement_timestamp if settlement_entry else None,
+                settlement_timestamp=settlement_entry.settlement_timestamp
+                if settlement_entry
+                else None,
             )
         )
     return rows
 
 
-def _text_entries(session: Session, today: Optional[dt.date], with_difference: bool) -> List[PriceTextEntry]:
+def _text_entries(
+    session: Session, today: dt.date | None, with_difference: bool
+) -> list[PriceTextEntry]:
     today = today or dt.date.today()
     current_year = today.year
 
     market_prices = get_market_prices_by_product_year(session)
     surcharges = get_otc_surcharges_by_product_year(session)
-    settlements = get_settlement_prices_by_product_year(session) if with_difference else {}
+    settlements = (
+        get_settlement_prices_by_product_year(session) if with_difference else {}
+    )
 
     entries = []
     for product_type, year_label in PRICE_PRODUCT_ORDER_TEXT:
@@ -186,16 +203,27 @@ def _text_entries(session: Session, today: Optional[dt.date], with_difference: b
 
         market_price_entry = market_prices.get(key)
         surcharge_entry = surcharges.get(key)
-        market_price_value = round_price(market_price_entry.price_eur_mwh if market_price_entry else 0.0)
-        surcharge_value = round_price(surcharge_entry.surcharge_eur_mwh if surcharge_entry else 0.0)
-        final_price_value = round_price(final_price(market_price_value, surcharge_value))
+        market_price_value = round_price(
+            market_price_entry.price_eur_mwh if market_price_entry else 0.0
+        )
+        surcharge_value = round_price(
+            surcharge_entry.surcharge_eur_mwh if surcharge_entry else 0.0
+        )
+        final_price_value = round_price(
+            final_price(market_price_value, surcharge_value)
+        )
 
         difference_value = None
         if with_difference:
             settlement_entry = settlements.get(key)
             if settlement_entry is not None:
-                settlement_value = round_price(settlement_entry.settlement_price_eur_mwh)
-                difference_value = round_price(settlement_difference(final_price_value, settlement_value))
+                settlement_value = round_price(
+                    settlement_entry.settlement_price_eur_mwh
+                )
+                difference = settlement_difference(final_price_value, settlement_value)
+                difference_value = (
+                    round_price(difference) if difference is not None else None
+                )
 
         entries.append(
             PriceTextEntry(
@@ -207,13 +235,13 @@ def _text_entries(session: Session, today: Optional[dt.date], with_difference: b
     return entries
 
 
-def get_chat_text(session: Session, today: Optional[dt.date] = None) -> str:
+def get_chat_text(session: Session, today: dt.date | None = None) -> str:
     """Chat-Kurztext: finale Preise in Chat-Reihenfolge, ohne Settlement-Differenz."""
     entries = _text_entries(session, today, with_difference=False)
     return build_chat_text(entries)
 
 
-def get_mail_text(session: Session, today: Optional[dt.date] = None) -> str:
+def get_mail_text(session: Session, today: dt.date | None = None) -> str:
     """Mailtext: finale Preise in Chat-Reihenfolge, inkl. Differenz zum Settlement Vortag."""
     entries = _text_entries(session, today, with_difference=True)
     return build_mail_text(entries)

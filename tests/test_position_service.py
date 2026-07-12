@@ -34,7 +34,9 @@ def session():
 
 def _seed_pms_position(session, year, position_mwh):
     session.add(
-        PortfolioPosition(as_of_date=TODAY, year=year, position_mwh=position_mwh, source="test")
+        PortfolioPosition(
+            as_of_date=TODAY, year=year, position_mwh=position_mwh, source="test"
+        )
     )
     session.commit()
 

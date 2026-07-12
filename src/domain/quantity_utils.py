@@ -8,7 +8,7 @@ Zentrale Fachregel (Vorzeichenlogik):
 - negative Menge = Partner verkauft an uns -> Positionswirkung negativ
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from src.domain.calendar_utils import hours_in_year
 

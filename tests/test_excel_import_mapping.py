@@ -84,14 +84,18 @@ def test_intraday_trades_map_v_to_positive_and_k_to_negative(workbook):
 
 
 def test_market_prices_and_surcharges_cover_base_and_peak_y1_to_y3(workbook):
-    prices, surcharges, warnings = read_market_prices_and_surcharges_from_excel(workbook, CURRENT_YEAR)
+    prices, surcharges, warnings = read_market_prices_and_surcharges_from_excel(
+        workbook, CURRENT_YEAR
+    )
 
     price_by_key = {(p.product_type, p.delivery_year): p.price_eur_mwh for p in prices}
     assert price_by_key[("Base", 2027)] == pytest.approx(93.19)
     assert price_by_key[("Peak", 2029)] == pytest.approx(76.12)
     assert ("Base", 2030) not in price_by_key  # nur Y+1..Y+3 werden verwendet
 
-    surcharge_by_key = {(s.product_type, s.delivery_year): s.surcharge_eur_mwh for s in surcharges}
+    surcharge_by_key = {
+        (s.product_type, s.delivery_year): s.surcharge_eur_mwh for s in surcharges
+    }
     assert surcharge_by_key[("Base", 2027)] == pytest.approx(0.40)
     assert surcharge_by_key[("Peak", 2029)] == pytest.approx(0.85)
     assert warnings == []
@@ -151,7 +155,9 @@ def test_pfc_checks_read_real_files_for_all_three_years():
 
 
 def test_pfc_checks_fall_back_to_defaults_when_directory_missing(tmp_path):
-    seeds, warnings = read_pfc_checks_from_files(tmp_path / "does_not_exist", CURRENT_YEAR, TODAY)
+    seeds, warnings = read_pfc_checks_from_files(
+        tmp_path / "does_not_exist", CURRENT_YEAR, TODAY
+    )
 
     assert len(seeds) == 3
     assert all(s.is_default for s in seeds)
@@ -159,7 +165,9 @@ def test_pfc_checks_fall_back_to_defaults_when_directory_missing(tmp_path):
 
 
 def test_seed_database_from_excel_populates_all_tables(session):
-    report = seed_database_from_excel(session, excel_path=EXCEL_PATH, pfc_dir=PFC_DIR, today=TODAY)
+    report = seed_database_from_excel(
+        session, excel_path=EXCEL_PATH, pfc_dir=PFC_DIR, today=TODAY
+    )
     session.commit()
 
     assert report.already_seeded is False
@@ -175,10 +183,14 @@ def test_seed_database_from_excel_populates_all_tables(session):
 
 
 def test_seed_database_from_excel_does_not_overwrite_already_seeded_db(session):
-    seed_database_from_excel(session, excel_path=EXCEL_PATH, pfc_dir=PFC_DIR, today=TODAY)
+    seed_database_from_excel(
+        session, excel_path=EXCEL_PATH, pfc_dir=PFC_DIR, today=TODAY
+    )
     session.commit()
 
-    report_second_run = seed_database_from_excel(session, excel_path=EXCEL_PATH, pfc_dir=PFC_DIR, today=TODAY)
+    report_second_run = seed_database_from_excel(
+        session, excel_path=EXCEL_PATH, pfc_dir=PFC_DIR, today=TODAY
+    )
 
     assert report_second_run.already_seeded is True
     assert report_second_run.warnings == []

@@ -28,7 +28,9 @@ _GREATER_THAN_CONDITIONS = {TRIGGER_PARTNER_BUYS_GT, TRIGGER_PARTNER_SELLS_GT}
 _LESS_THAN_CONDITIONS = {TRIGGER_PARTNER_BUYS_LT, TRIGGER_PARTNER_SELLS_LT}
 
 
-def is_triggered(trigger_condition: str, market_price: float, limit_price: float) -> bool:
+def is_triggered(
+    trigger_condition: str, market_price: float, limit_price: float
+) -> bool:
     """Prueft, ob die Ausloesebedingung gegen den aktuellen Marktpreis erfuellt ist."""
     if trigger_condition in _GREATER_THAN_CONDITIONS:
         return market_price > limit_price

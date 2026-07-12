@@ -34,7 +34,7 @@ def _offset_from_label(label: str) -> int:
 def seed_default_mock_data(session: Session) -> None:
     """Befuellt eine leere Datenbank mit Default-Mockdaten fuer alle Fachtabellen."""
     today = dt.date.today()
-    now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    now = dt.datetime.now(dt.UTC).replace(tzinfo=None)
     current_year = today.year
 
     _seed_portfolio_positions(session, current_year, today)
@@ -48,7 +48,9 @@ def seed_default_mock_data(session: Session) -> None:
     _upsert_metadata(session, "initial_seed_source", SOURCE_LABEL, now)
 
 
-def _seed_portfolio_positions(session: Session, current_year: int, today: dt.date) -> None:
+def _seed_portfolio_positions(
+    session: Session, current_year: int, today: dt.date
+) -> None:
     for offset, position_mwh in _defaults.PORTFOLIO_POSITION_BY_OFFSET.items():
         session.add(
             PortfolioPosition(
@@ -81,15 +83,21 @@ def _seed_intraday_trades(session: Session, today: dt.date) -> None:
     )
 
 
-def _seed_prices_and_surcharges(session: Session, current_year: int, now: dt.datetime) -> None:
+def _seed_prices_and_surcharges(
+    session: Session, current_year: int, now: dt.datetime
+) -> None:
     for product_type, year_label in PRICE_PRODUCT_ORDER_TABLE:
         offset = _offset_from_label(year_label)
         delivery_year = current_year + offset
         price = (
-            _defaults.BASE_MARKET_PRICE if product_type == "Base" else _defaults.PEAK_MARKET_PRICE
+            _defaults.BASE_MARKET_PRICE
+            if product_type == "Base"
+            else _defaults.PEAK_MARKET_PRICE
         )[offset]
         surcharge = (
-            _defaults.BASE_OTC_SURCHARGE if product_type == "Base" else _defaults.PEAK_OTC_SURCHARGE
+            _defaults.BASE_OTC_SURCHARGE
+            if product_type == "Base"
+            else _defaults.PEAK_OTC_SURCHARGE
         )[offset]
         session.add(
             MarketPrice(

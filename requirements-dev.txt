@@ -1,0 +1,13 @@
+# Entwicklungs-/Qualitaets-Werkzeuge (nicht fuer Prod-Image noetig).
+# Installation:  pip install -r requirements-dev.txt
+# Danach einmalig: pre-commit install
+#
+# Exakte Pins gemaess Hausstandard. Aktualisieren mit: pre-commit autoupdate
+# (und die rev-Tags in .pre-commit-config.yaml angleichen).
+
+ruff==0.9.10
+mypy==1.15.0
+pre-commit==4.1.0
+
+# Optionale Typ-Stubs (bei Bedarf einkommentieren):
+# pandas-stubs==2.2.3.250308

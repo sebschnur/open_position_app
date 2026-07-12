@@ -29,7 +29,9 @@ today = dt.date.today()
 username = get_current_username()
 year_labels = [str(today.year + offset) for offset in range(5)]
 
-st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
+st.caption(
+    f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)"
+)
 
 _DIRECTION_LABEL_TO_KEY = {label: key for key, label in DIRECTION_LABELS.items()}
 
@@ -53,7 +55,7 @@ with st.expander("Neuen Kalendereintrag anlegen", expanded=False):
         qty_cols = st.columns(5)
         quantities = [
             col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
-            for col, year in zip(qty_cols, years)
+            for col, year in zip(qty_cols, years, strict=False)
         ]
 
         submitted = st.form_submit_button("Eintrag speichern")
@@ -86,7 +88,9 @@ if submitted:
 # --- Faellige und geplante Eintraege ----------------------------------------
 
 st.subheader("Fällige und geplante Einträge")
-st.caption("Fällige/überfällige Einträge sind rot hervorgehoben. Erledigte Einträge werden ausgeblendet.")
+st.caption(
+    "Fällige/überfällige Einträge sind rot hervorgehoben. Erledigte Einträge werden ausgeblendet."
+)
 
 with SessionLocal() as session:
     calendar_rows = get_visible_calendar_rows(session, today=today)
@@ -98,7 +102,17 @@ else:
     header_cols = st.columns(col_widths)
     for col, header in zip(
         header_cols,
-        ["Datum", "Partner-Alias", "Richtung", *year_labels, "Status", "Geändert von", "", ""],
+        [
+            "Datum",
+            "Partner-Alias",
+            "Richtung",
+            *year_labels,
+            "Status",
+            "Geändert von",
+            "",
+            "",
+        ],
+        strict=False,
     ):
         col.markdown(f"**{header}**")
 

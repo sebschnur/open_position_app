@@ -30,7 +30,9 @@ today = dt.date.today()
 username = get_current_username()
 year_labels = [str(today.year + offset) for offset in range(5)]
 st.caption(f"Datenstand: {today.isoformat()} (Mockdaten)")
-st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
+st.caption(
+    f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)"
+)
 
 with SessionLocal() as session:
     position_rows = get_position_table(session, today=today)
@@ -71,7 +73,9 @@ if position_rows:
         .encode(y="Limit MW:Q")
     )
     st.altair_chart((bars + limit_lines).properties(height=280, width="container"))
-    st.caption("Simulierte Position je Kalenderjahr in MW; rote Linie = Limit (±1,00 MW).")
+    st.caption(
+        "Simulierte Position je Kalenderjahr in MW; rote Linie = Limit (±1,00 MW)."
+    )
 
 position_df = pd.DataFrame(
     [
@@ -107,7 +111,9 @@ _MW_COLUMNS = [
 position_style = (
     position_df.style.apply(_highlight_breach, axis=1)
     .format(precision=2, thousands=".", decimal=",", na_rep="-", subset=_MW_COLUMNS)
-    .format(precision=1, thousands=".", decimal=",", na_rep="-", subset=["Auslastung %"])
+    .format(
+        precision=1, thousands=".", decimal=",", na_rep="-", subset=["Auslastung %"]
+    )
 )
 
 st.dataframe(
@@ -133,7 +139,7 @@ with st.expander("Neues untertaegiges Geschaeft erfassen", expanded=False):
         qty_cols = st.columns(5)
         quantities = [
             col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
-            for col, year in zip(qty_cols, years)
+            for col, year in zip(qty_cols, years, strict=False)
         ]
 
         submitted = st.form_submit_button("Einfuegen")
@@ -158,7 +164,9 @@ if submitted:
             for error in errors:
                 st.error(error)
         else:
-            st.success("Untertaegiges Geschaeft gespeichert. Position wurde aktualisiert.")
+            st.success(
+                "Untertaegiges Geschaeft gespeichert. Position wurde aktualisiert."
+            )
             st.rerun()
 
 # --- Untertaegige Geschaefte --------------------------------------------
@@ -172,7 +180,16 @@ else:
     header_cols = st.columns(col_widths)
     for col, header in zip(
         header_cols,
-        ["Datum", "Partner-Alias", *year_labels, "Interpretation", "Quelle", "Geändert von", ""],
+        [
+            "Datum",
+            "Partner-Alias",
+            *year_labels,
+            "Interpretation",
+            "Quelle",
+            "Geändert von",
+            "",
+        ],
+        strict=False,
     ):
         col.markdown(f"**{header}**")
 

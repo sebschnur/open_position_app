@@ -31,7 +31,9 @@ current_year = today.year
 username = get_current_username()
 year_labels = [str(current_year + offset) for offset in range(5)]
 
-st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
+st.caption(
+    f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)"
+)
 
 
 def _offset_from_label(label: str) -> int:
@@ -43,10 +45,12 @@ _TRIGGER_OPTIONS = [
     for product_type, year_label in PRICE_PRODUCT_ORDER_TABLE
 ]
 _TRIGGER_LABELS = [f"{product_type} {year}" for product_type, year in _TRIGGER_OPTIONS]
-_TRIGGER_LABEL_TO_KEY = dict(zip(_TRIGGER_LABELS, _TRIGGER_OPTIONS))
+_TRIGGER_LABEL_TO_KEY = dict(zip(_TRIGGER_LABELS, _TRIGGER_OPTIONS, strict=False))
 
 _CONDITION_LABELS = list(TRIGGER_CONDITION_LABELS.values())
-_CONDITION_LABEL_TO_KEY = {label: key for key, label in TRIGGER_CONDITION_LABELS.items()}
+_CONDITION_LABEL_TO_KEY = {
+    label: key for key, label in TRIGGER_CONDITION_LABELS.items()
+}
 
 # --- Neue Limitorder anlegen ----------------------------------------------
 
@@ -64,14 +68,16 @@ with st.expander("Neue Limitorder anlegen", expanded=False):
         qty_cols = st.columns(5)
         quantities = [
             col.number_input(f"Menge {year} MWh", value=0.0, step=100.0, format="%.0f")
-            for col, year in zip(qty_cols, years)
+            for col, year in zip(qty_cols, years, strict=False)
         ]
 
         select_cols = st.columns(2)
         trigger_label = select_cols[0].selectbox("Trigger-Preis", _TRIGGER_LABELS)
         condition_label = select_cols[1].selectbox("Auslöseart", _CONDITION_LABELS)
 
-        limit_price = st.number_input("Limitpreis €/MWh", value=0.0, step=0.01, format="%.2f")
+        limit_price = st.number_input(
+            "Limitpreis €/MWh", value=0.0, step=0.01, format="%.2f"
+        )
 
         valid_until = st.date_input("Gültig bis (optional)", value=None)
 
@@ -81,7 +87,9 @@ if submitted:
     if not partner_alias.strip():
         st.error("Partner-/Kunden-Alias darf nicht leer sein.")
     else:
-        trigger_product_type, trigger_delivery_year = _TRIGGER_LABEL_TO_KEY[trigger_label]
+        trigger_product_type, trigger_delivery_year = _TRIGGER_LABEL_TO_KEY[
+            trigger_label
+        ]
         trigger_condition = _CONDITION_LABEL_TO_KEY[condition_label]
         with SessionLocal() as session:
             errors = add_limit_order(
@@ -109,7 +117,9 @@ if submitted:
 # --- Offene Limitorders -----------------------------------------------------
 
 st.subheader("Offene Limitorders")
-st.caption("Ausgelöste Orders sind rot hervorgehoben. Es gibt keine automatische Ausführung.")
+st.caption(
+    "Ausgelöste Orders sind rot hervorgehoben. Es gibt keine automatische Ausführung."
+)
 
 with SessionLocal() as session:
     order_rows = get_open_limit_order_rows(session)
@@ -123,10 +133,19 @@ else:
     for col, header in zip(
         header_cols,
         [
-            "Partner-Alias", *year_labels,
-            "Trigger", "Auslöseart", "Marktpreis", "Limitpreis", "Gültig bis",
-            "Ausgelöst?", "Geändert von", "", "",
+            "Partner-Alias",
+            *year_labels,
+            "Trigger",
+            "Auslöseart",
+            "Marktpreis",
+            "Limitpreis",
+            "Gültig bis",
+            "Ausgelöst?",
+            "Geändert von",
+            "",
+            "",
         ],
+        strict=False,
     ):
         col.markdown(f"**{header}**")
 

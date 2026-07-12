@@ -23,9 +23,15 @@ from src.services.initialization_service import create_initial_backup  # noqa: E
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Excel-/PFC-Mockdatenimport")
-    parser.add_argument("--excel", type=Path, default=MOCK_EXCEL_PATH, help="Pfad zur Excel-Mockdatei")
-    parser.add_argument("--db", type=Path, default=DB_PATH, help="Pfad zur SQLite-Datenbank")
-    parser.add_argument("--pfc-dir", type=Path, default=PFC_DIR, help="Verzeichnis mit PFC-Dateien")
+    parser.add_argument(
+        "--excel", type=Path, default=MOCK_EXCEL_PATH, help="Pfad zur Excel-Mockdatei"
+    )
+    parser.add_argument(
+        "--db", type=Path, default=DB_PATH, help="Pfad zur SQLite-Datenbank"
+    )
+    parser.add_argument(
+        "--pfc-dir", type=Path, default=PFC_DIR, help="Verzeichnis mit PFC-Dateien"
+    )
     args = parser.parse_args()
 
     if args.db != DB_PATH:
@@ -40,9 +46,13 @@ def main() -> None:
     init_db()
 
     with SessionLocal() as session:
-        report = seed_database_from_excel(session, excel_path=args.excel, pfc_dir=args.pfc_dir)
+        report = seed_database_from_excel(
+            session, excel_path=args.excel, pfc_dir=args.pfc_dir
+        )
         if report.already_seeded:
-            print("Datenbank ist bereits initialisiert - Excel-Import wird nicht durchgefuehrt.")
+            print(
+                "Datenbank ist bereits initialisiert - Excel-Import wird nicht durchgefuehrt."
+            )
             return
         session.commit()
 

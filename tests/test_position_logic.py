@@ -20,10 +20,10 @@ def test_simulated_position_is_sum():
     "position_mw, breached",
     [
         (0.5, False),
-        (1.0, False),   # genau am Limit ist nicht verletzt
+        (1.0, False),  # genau am Limit ist nicht verletzt
         (-1.0, False),
         (1.01, True),
-        (-1.5, True),   # Limit gilt auf den Absolutwert
+        (-1.5, True),  # Limit gilt auf den Absolutwert
     ],
 )
 def test_is_limit_breached_on_absolute_value(position_mw, breached):

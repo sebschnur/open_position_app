@@ -6,7 +6,6 @@ echter Mailversand - nur kopierbarer Text, neutrale Formulierung.
 """
 
 from dataclasses import dataclass
-from typing import List, Optional
 
 from src.format_utils import format_de
 
@@ -18,7 +17,7 @@ MAIL_HEADER = "Aktuelle Preisindikationen für den Vertrieb:"
 class PriceTextEntry:
     label: str
     final_price_eur_mwh: float
-    difference_eur_mwh: Optional[float] = None
+    difference_eur_mwh: float | None = None
 
 
 def _format_eur_mwh(value: float) -> str:
@@ -31,7 +30,7 @@ def _format_signed_eur_mwh(value: float) -> str:
     return f"{sign}{_format_eur_mwh(value)}"
 
 
-def build_chat_text(entries: List[PriceTextEntry]) -> str:
+def build_chat_text(entries: list[PriceTextEntry]) -> str:
     """Chat-Kurztext: nur finale Preise, keine Settlement-Differenz."""
     lines = [CHAT_HEADER, ""]
     for entry in entries:
@@ -39,7 +38,7 @@ def build_chat_text(entries: List[PriceTextEntry]) -> str:
     return "\n".join(lines)
 
 
-def build_mail_text(entries: List[PriceTextEntry]) -> str:
+def build_mail_text(entries: list[PriceTextEntry]) -> str:
     """Mailtext: finale Preise plus Differenz zum Settlement des Vortages."""
     lines = [MAIL_HEADER, ""]
     for entry in entries:

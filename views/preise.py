@@ -30,7 +30,9 @@ today = dt.date.today()
 current_year = today.year
 username = get_current_username()
 
-st.caption(f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)")
+st.caption(
+    f"Angemeldeter Benutzer: **{username}** (wird bei jedem Eintrag gespeichert)"
+)
 
 
 def _offset_from_label(label: str) -> int:
@@ -93,8 +95,12 @@ if submitted:
         {
             "product_type": product_type,
             "delivery_year": delivery_year,
-            "market_price_eur_mwh": st.session_state[f"market_price_{product_type}_{delivery_year}"],
-            "otc_surcharge_eur_mwh": st.session_state[f"surcharge_{product_type}_{delivery_year}"],
+            "market_price_eur_mwh": st.session_state[
+                f"market_price_{product_type}_{delivery_year}"
+            ],
+            "otc_surcharge_eur_mwh": st.session_state[
+                f"surcharge_{product_type}_{delivery_year}"
+            ],
         }
         for product_type, delivery_year in input_keys
     ]
@@ -104,7 +110,9 @@ if submitted:
         # damit sie ohne zusaetzlichen Button-Klick aktuell sind.
         st.session_state["chat_text_area"] = get_chat_text(session, today=today)
         st.session_state["mail_text_area"] = get_mail_text(session, today=today)
-    st.success("Preise und Aufschlaege gespeichert. Chat- und Mailtext wurden aktualisiert.")
+    st.success(
+        "Preise und Aufschlaege gespeichert. Chat- und Mailtext wurden aktualisiert."
+    )
     st.rerun()
 
 # --- Preisvergleich Settlement -------------------------------------------
@@ -192,7 +200,9 @@ with st.expander("PFC-Pruefung anzeigen"):
                     "Differenz": row.difference_eur_mwh,
                     "Zeitstempel PFC-Datei": row.pfc_file_timestamp.isoformat(sep=" "),
                     "Zeitstempel Settlement": (
-                        row.settlement_timestamp.isoformat(sep=" ") if row.settlement_timestamp else "-"
+                        row.settlement_timestamp.isoformat(sep=" ")
+                        if row.settlement_timestamp
+                        else "-"
                     ),
                 }
                 for row in pfc_rows
@@ -209,4 +219,6 @@ with st.expander("PFC-Pruefung anzeigen"):
             hide_index=True,
             width="stretch",
         )
-        st.caption("Keine harte automatische Ampellogik - reine Anzeige zur fachlichen Pruefung.")
+        st.caption(
+            "Keine harte automatische Ampellogik - reine Anzeige zur fachlichen Pruefung."
+        )

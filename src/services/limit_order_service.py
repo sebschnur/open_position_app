@@ -15,13 +15,15 @@ automatisch oder manuell vergeben wird - das ist noch nicht fachlich geklaert.
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
 from src.domain.limit_order_logic import TRIGGER_CONDITION_LABELS, is_triggered
 from src.domain.quantity_utils import round_mwh
-from src.domain.validation import expected_sign_for_trigger_condition, validate_trade_quantities
+from src.domain.validation import (
+    expected_sign_for_trigger_condition,
+    validate_trade_quantities,
+)
 from src.repositories.intraday_trade_repository import (
     add_intraday_trade as _repo_add_intraday_trade,
 )
@@ -29,9 +31,13 @@ from src.repositories.limit_order_repository import (
     STATUS_DELETED,
     STATUS_EXECUTED,
     STATUS_OPEN,
+    get_limit_order,
+    list_open_limit_orders,
+    set_status,
 )
-from src.repositories.limit_order_repository import add_limit_order as _repo_add_limit_order
-from src.repositories.limit_order_repository import get_limit_order, list_open_limit_orders, set_status
+from src.repositories.limit_order_repository import (
+    add_limit_order as _repo_add_limit_order,
+)
 from src.repositories.price_repository import get_market_prices_by_product_year
 
 
@@ -47,19 +53,21 @@ class LimitOrderRow:
     trigger_label: str
     trigger_condition_label: str
     limit_price_eur_mwh: float
-    current_market_price_eur_mwh: Optional[float]
+    current_market_price_eur_mwh: float | None
     is_triggered: bool
     last_modified_by: str
-    valid_until: Optional[dt.date]
+    valid_until: dt.date | None
     status: str
 
 
-def get_open_limit_order_rows(session: Session) -> List[LimitOrderRow]:
+def get_open_limit_order_rows(session: Session) -> list[LimitOrderRow]:
     """Liefert alle offenen Limitorders inkl. Ausloese-Pruefung gegen aktuelle Marktpreise."""
     prices_by_key = get_market_prices_by_product_year(session)
     rows = []
     for order in list_open_limit_orders(session):
-        market_price = prices_by_key.get((order.trigger_product_type, order.trigger_delivery_year))
+        market_price = prices_by_key.get(
+            (order.trigger_product_type, order.trigger_delivery_year)
+        )
         current_price = market_price.price_eur_mwh if market_price is not None else None
         triggered = current_price is not None and is_triggered(
             order.trigger_condition, current_price, order.limit_price_eur_mwh
@@ -74,7 +82,9 @@ def get_open_limit_order_rows(session: Session) -> List[LimitOrderRow]:
                 quantity_y3_mwh=round_mwh(order.quantity_y3_mwh),
                 quantity_y4_mwh=round_mwh(order.quantity_y4_mwh),
                 trigger_label=f"{order.trigger_product_type} {order.trigger_delivery_year}",
-                trigger_condition_label=TRIGGER_CONDITION_LABELS[order.trigger_condition],
+                trigger_condition_label=TRIGGER_CONDITION_LABELS[
+                    order.trigger_condition
+                ],
                 limit_price_eur_mwh=order.limit_price_eur_mwh,
                 current_market_price_eur_mwh=current_price,
                 is_triggered=triggered,
@@ -99,8 +109,8 @@ def add_limit_order(
     trigger_condition: str,
     limit_price_eur_mwh: float,
     username: str = "system",
-    valid_until: Optional[dt.date] = None,
-) -> List[str]:
+    valid_until: dt.date | None = None,
+) -> list[str]:
     """Validiert und speichert eine neue Limitorder.
 
     ``username`` wird als letzter Bearbeiter gespeichert. Ein separates Feld
@@ -141,7 +151,10 @@ def add_limit_order(
 
 
 def mark_executed(
-    session: Session, order_id: int, username: str = "system", today: Optional[dt.date] = None
+    session: Session,
+    order_id: int,
+    username: str = "system",
+    today: dt.date | None = None,
 ) -> None:
     """Erzeugt ein untertaegiges Geschaeft aus der Limitorder und setzt sie auf 'ausgefuehrt'.
 

@@ -12,7 +12,10 @@ from sqlalchemy.orm import sessionmaker
 
 from src.db.database import Base
 from src.db.models import IntradayTrade, LimitOrder, MarketPrice
-from src.domain.limit_order_logic import TRIGGER_PARTNER_BUYS_LT, TRIGGER_PARTNER_SELLS_GT
+from src.domain.limit_order_logic import (
+    TRIGGER_PARTNER_BUYS_LT,
+    TRIGGER_PARTNER_SELLS_GT,
+)
 from src.services.limit_order_service import (
     add_limit_order,
     get_open_limit_order_rows,

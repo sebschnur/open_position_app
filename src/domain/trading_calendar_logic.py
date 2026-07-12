@@ -9,7 +9,6 @@ abhaengen.
 """
 
 import datetime as dt
-from typing import Optional
 
 from src.domain.validation import DIRECTION_PARTNER_BUYS, DIRECTION_PARTNER_SELLS
 
@@ -25,11 +24,11 @@ DIRECTION_LABELS = {
 }
 
 
-def _resolve_today(today: Optional[dt.date]) -> dt.date:
+def _resolve_today(today: dt.date | None) -> dt.date:
     return today if today is not None else dt.date.today()
 
 
-def is_due(due_date: dt.date, status: str, today: Optional[dt.date] = None) -> bool:
+def is_due(due_date: dt.date, status: str, today: dt.date | None = None) -> bool:
     """Faellig, wenn Datum <= heute und Status != erledigt."""
     return due_date <= _resolve_today(today) and status != STATUS_DONE
 

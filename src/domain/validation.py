@@ -8,7 +8,7 @@ Konvention:
 - "negative" = Partner verkauft an uns -> alle befuellten Mengen muessen < 0 sein
 """
 
-from typing import Iterable
+from collections.abc import Iterable
 
 from src.domain.limit_order_logic import (
     TRIGGER_PARTNER_BUYS_GT,
@@ -69,7 +69,9 @@ def all_nonzero_match_sign(quantities: Iterable[float], expected_sign: str) -> b
     return True
 
 
-def validate_trade_quantities(quantities: Iterable[float], expected_sign: str) -> list[str]:
+def validate_trade_quantities(
+    quantities: Iterable[float], expected_sign: str
+) -> list[str]:
     """Prueft Mengen gegen das erwartete Vorzeichen.
 
     Gibt eine Liste von Fehlermeldungen zurueck (leer = gueltig), damit die UI
@@ -85,6 +87,8 @@ def validate_trade_quantities(quantities: Iterable[float], expected_sign: str) -
         if expected_sign == SIGN_POSITIVE:
             errors.append("Partner kauft: alle befuellten Mengen muessen positiv sein.")
         else:
-            errors.append("Partner verkauft: alle befuellten Mengen muessen negativ sein.")
+            errors.append(
+                "Partner verkauft: alle befuellten Mengen muessen negativ sein."
+            )
 
     return errors

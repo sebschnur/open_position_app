@@ -19,7 +19,9 @@ from src.domain.validation import (
 
 def test_expected_sign_for_trigger_condition():
     assert expected_sign_for_trigger_condition(TRIGGER_PARTNER_BUYS_LT) == SIGN_POSITIVE
-    assert expected_sign_for_trigger_condition(TRIGGER_PARTNER_SELLS_GT) == SIGN_NEGATIVE
+    assert (
+        expected_sign_for_trigger_condition(TRIGGER_PARTNER_SELLS_GT) == SIGN_NEGATIVE
+    )
 
 
 def test_expected_sign_for_direction():

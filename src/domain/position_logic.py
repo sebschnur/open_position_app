@@ -31,4 +31,8 @@ def utilization_pct(position_mw: float, limit_mw: float = POSITION_LIMIT_MW) -> 
 
 def limit_status(position_mw: float, limit_mw: float = POSITION_LIMIT_MW) -> str:
     """Statustext fuer die Positionstabelle."""
-    return STATUS_LIMIT_BREACHED if is_limit_breached(position_mw, limit_mw) else STATUS_WITHIN_LIMIT
+    return (
+        STATUS_LIMIT_BREACHED
+        if is_limit_breached(position_mw, limit_mw)
+        else STATUS_WITHIN_LIMIT
+    )

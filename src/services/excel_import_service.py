@@ -23,7 +23,6 @@ Bewusste Entscheidungen (siehe Projekt-Memory / bestaetigte Klaerpunkte):
 import datetime as dt
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import openpyxl
 from sqlalchemy.orm import Session
@@ -140,18 +139,20 @@ class LimitOrderSeed:
     trigger_delivery_year: int
     trigger_condition: str
     limit_price_eur_mwh: float
-    valid_until: Optional[dt.date]
+    valid_until: dt.date | None
 
 
 @dataclass
 class ImportReport:
-    warnings: List[str]
+    warnings: list[str]
     already_seeded: bool
 
 
-def _year_offsets_from_header(ws, header_row: int, cols, current_year: int) -> Dict[int, int]:
+def _year_offsets_from_header(
+    ws, header_row: int, cols, current_year: int
+) -> dict[int, int]:
     """Liefert {Spalte: Offset} fuer Header-Spalten, deren Jahr zu Y0..Y4 passt."""
-    mapping: Dict[int, int] = {}
+    mapping: dict[int, int] = {}
     for col in cols:
         year = ws.cell(row=header_row, column=col).value
         if isinstance(year, float) and year.is_integer():
@@ -164,7 +165,7 @@ def _year_offsets_from_header(ws, header_row: int, cols, current_year: int) -> D
     return mapping
 
 
-def _sign_from_kv(value) -> Optional[float]:
+def _sign_from_kv(value) -> float | None:
     if not isinstance(value, str):
         return None
     normalized = value.strip().upper()
@@ -175,7 +176,7 @@ def _sign_from_kv(value) -> Optional[float]:
     return None
 
 
-def _direction_from_excel(value) -> Optional[str]:
+def _direction_from_excel(value) -> str | None:
     if not isinstance(value, str):
         return None
     normalized = value.strip().lower()
@@ -196,9 +197,9 @@ def _cell_date(value, fallback: dt.date) -> dt.date:
 
 def read_portfolio_positions_from_excel(
     workbook, current_year: int
-) -> Tuple[List[PortfolioPositionSeed], List[str]]:
+) -> tuple[list[PortfolioPositionSeed], list[str]]:
     """Liest die Netto-PMS-Position je Jahr (Summe(V) - Summe(K))."""
-    warnings: List[str] = []
+    warnings: list[str] = []
     ws = workbook[_POSITION_SHEET]
     col_offsets = _year_offsets_from_header(
         ws, _POSITION_YEAR_HEADER_ROW, _POSITION_YEAR_COLS, current_year
@@ -209,7 +210,7 @@ def read_portfolio_positions_from_excel(
             f"({current_year}..{current_year + 4}) - Position kann nicht importiert werden."
         )
 
-    net_by_offset: Dict[int, float] = {}
+    net_by_offset: dict[int, float] = {}
     for row in _POSITION_DATA_ROWS:
         sign = _sign_from_kv(ws.cell(row=row, column=3).value)
         if sign is None:
@@ -220,13 +221,17 @@ def read_portfolio_positions_from_excel(
         for col, offset in col_offsets.items():
             value = ws.cell(row=row, column=col).value
             if isinstance(value, (int, float)):
-                net_by_offset[offset] = net_by_offset.get(offset, 0.0) + sign * float(value)
+                net_by_offset[offset] = net_by_offset.get(offset, 0.0) + sign * float(
+                    value
+                )
 
-    seeds: List[PortfolioPositionSeed] = []
+    seeds: list[PortfolioPositionSeed] = []
     for offset in _YEAR_OFFSETS_ALL:
         year = current_year + offset
         if offset in net_by_offset:
-            seeds.append(PortfolioPositionSeed(year=year, position_mwh=net_by_offset[offset]))
+            seeds.append(
+                PortfolioPositionSeed(year=year, position_mwh=net_by_offset[offset])
+            )
         else:
             # Bewusst KEIN Default-Fallback: die PMS-Position ist fachlich zu
             # wichtig (Limitpruefung), um sie stillschweigend zu erfinden.
@@ -239,15 +244,15 @@ def read_portfolio_positions_from_excel(
 
 def read_intraday_trades_from_excel(
     workbook, current_year: int, today: dt.date
-) -> Tuple[List[IntradayTradeSeed], List[str]]:
+) -> tuple[list[IntradayTradeSeed], list[str]]:
     """Liest untertaegige Geschaefte (je Excel-Zeile ein Geschaeft, K/V bestimmt Vorzeichen)."""
-    warnings: List[str] = []
+    warnings: list[str] = []
     ws = workbook[_POSITION_SHEET]
     col_offsets = _year_offsets_from_header(
         ws, _POSITION_YEAR_HEADER_ROW, _POSITION_YEAR_COLS, current_year
     )
 
-    seeds: List[IntradayTradeSeed] = []
+    seeds: list[IntradayTradeSeed] = []
     for row in range(_INTRADAY_DATA_START_ROW, ws.max_row + 1):
         partner_alias = ws.cell(row=row, column=2).value
         if not partner_alias:
@@ -291,10 +296,10 @@ def read_intraday_trades_from_excel(
 
 def _read_price_and_surcharge_block(
     ws, product_type: str, price_col: int, surcharge_col: int, current_year: int
-) -> Tuple[List[MarketPriceSeed], List[SurchargeSeed], List[str]]:
-    warnings: List[str] = []
-    market_prices: List[MarketPriceSeed] = []
-    surcharges: List[SurchargeSeed] = []
+) -> tuple[list[MarketPriceSeed], list[SurchargeSeed], list[str]]:
+    warnings: list[str] = []
+    market_prices: list[MarketPriceSeed] = []
+    surcharges: list[SurchargeSeed] = []
     found_offsets = set()
 
     for row in _PRICE_DATA_ROWS:
@@ -309,7 +314,11 @@ def _read_price_and_surcharge_block(
         price = ws.cell(row=row, column=price_col).value
         if isinstance(price, (int, float)):
             market_prices.append(
-                MarketPriceSeed(product_type=product_type, delivery_year=year, price_eur_mwh=float(price))
+                MarketPriceSeed(
+                    product_type=product_type,
+                    delivery_year=year,
+                    price_eur_mwh=float(price),
+                )
             )
         else:
             warnings.append(
@@ -320,7 +329,11 @@ def _read_price_and_surcharge_block(
         surcharge = ws.cell(row=row, column=surcharge_col).value
         if isinstance(surcharge, (int, float)):
             surcharges.append(
-                SurchargeSeed(product_type=product_type, delivery_year=year, surcharge_eur_mwh=float(surcharge))
+                SurchargeSeed(
+                    product_type=product_type,
+                    delivery_year=year,
+                    surcharge_eur_mwh=float(surcharge),
+                )
             )
         else:
             warnings.append(
@@ -340,7 +353,7 @@ def _read_price_and_surcharge_block(
 
 def read_market_prices_and_surcharges_from_excel(
     workbook, current_year: int
-) -> Tuple[List[MarketPriceSeed], List[SurchargeSeed], List[str]]:
+) -> tuple[list[MarketPriceSeed], list[SurchargeSeed], list[str]]:
     """Liest Marktpreise/OTC-Aufschlaege fuer Base und Peak, Y+1 bis Y+3."""
     ws = workbook[_PRICES_SHEET]
     base_prices, base_surcharges, base_warnings = _read_price_and_surcharge_block(
@@ -358,11 +371,11 @@ def read_market_prices_and_surcharges_from_excel(
 
 def read_settlement_prices_from_excel(
     workbook, current_year: int
-) -> Tuple[List[SettlementPriceSeed], List[str]]:
+) -> tuple[list[SettlementPriceSeed], list[str]]:
     """Liest Base-Settlementpreise aus Excel; Peak ist immer ein Default (siehe Spec 8.1)."""
-    warnings: List[str] = []
+    warnings: list[str] = []
     ws = workbook[_PRICES_SHEET]
-    seeds: List[SettlementPriceSeed] = []
+    seeds: list[SettlementPriceSeed] = []
     found_offsets = set()
 
     for row in _PRICE_DATA_ROWS:
@@ -377,8 +390,10 @@ def read_settlement_prices_from_excel(
         if isinstance(value, (int, float)):
             seeds.append(
                 SettlementPriceSeed(
-                    product_type="Base", delivery_year=year,
-                    settlement_price_eur_mwh=float(value), is_default=False,
+                    product_type="Base",
+                    delivery_year=year,
+                    settlement_price_eur_mwh=float(value),
+                    is_default=False,
                 )
             )
             found_offsets.add(offset)
@@ -393,8 +408,10 @@ def read_settlement_prices_from_excel(
             year = current_year + offset
             seeds.append(
                 SettlementPriceSeed(
-                    product_type="Base", delivery_year=year,
-                    settlement_price_eur_mwh=_defaults.BASE_SETTLEMENT_PRICE[offset], is_default=True,
+                    product_type="Base",
+                    delivery_year=year,
+                    settlement_price_eur_mwh=_defaults.BASE_SETTLEMENT_PRICE[offset],
+                    is_default=True,
                 )
             )
 
@@ -406,8 +423,10 @@ def read_settlement_prices_from_excel(
         year = current_year + offset
         seeds.append(
             SettlementPriceSeed(
-                product_type="Peak", delivery_year=year,
-                settlement_price_eur_mwh=_defaults.PEAK_SETTLEMENT_PRICE[offset], is_default=True,
+                product_type="Peak",
+                delivery_year=year,
+                settlement_price_eur_mwh=_defaults.PEAK_SETTLEMENT_PRICE[offset],
+                is_default=True,
             )
         )
 
@@ -416,9 +435,9 @@ def read_settlement_prices_from_excel(
 
 def read_trading_calendar_from_excel(
     workbook, current_year: int, today: dt.date
-) -> Tuple[List[TradingCalendarSeed], List[str]]:
+) -> tuple[list[TradingCalendarSeed], list[str]]:
     """Liest Handelskalendereintraege (Spalten A:G), Produktspalte D wird nicht uebernommen."""
-    warnings: List[str] = []
+    warnings: list[str] = []
     ws = workbook[_CALENDAR_SHEET]
     col_offsets = _year_offsets_from_header(
         ws, _CALENDAR_HEADER_ROW, _CALENDAR_YEAR_COLS, current_year
@@ -429,7 +448,7 @@ def read_trading_calendar_from_excel(
             f"({current_year + 1}..{current_year + 3})."
         )
 
-    seeds: List[TradingCalendarSeed] = []
+    seeds: list[TradingCalendarSeed] = []
     for row in range(_CALENDAR_DATA_START_ROW, ws.max_row + 1):
         partner_alias = ws.cell(row=row, column=2).value
         if not partner_alias:
@@ -451,7 +470,9 @@ def read_trading_calendar_from_excel(
                 quantities[offset] = sign * abs(float(value))
 
         quantities_list = [quantities[offset] for offset in _YEAR_OFFSETS_ALL]
-        errors = validate_trade_quantities(quantities_list, expected_sign_for_direction(direction))
+        errors = validate_trade_quantities(
+            quantities_list, expected_sign_for_direction(direction)
+        )
         if errors:
             warnings.append(
                 f"'{_CALENDAR_SHEET}' Zeile {row} ('{partner_alias}'): {' '.join(errors)} "
@@ -477,11 +498,11 @@ def read_trading_calendar_from_excel(
 
 def read_limit_orders_from_excel(
     workbook, current_year: int
-) -> Tuple[List[LimitOrderSeed], List[str]]:
+) -> tuple[list[LimitOrderSeed], list[str]]:
     """Liest Limitorders; nur 'Kauf-Limit' wird unterstuetzt (siehe Modulkommentar)."""
-    warnings: List[str] = []
+    warnings: list[str] = []
     ws = workbook[_LIMIT_ORDER_SHEET]
-    seeds: List[LimitOrderSeed] = []
+    seeds: list[LimitOrderSeed] = []
 
     for row in range(_LIMIT_ORDER_DATA_START_ROW, ws.max_row + 1):
         delivery_year = ws.cell(row=row, column=1).value
@@ -573,8 +594,8 @@ def read_limit_orders_from_excel(
 def seed_database_from_excel(
     session: Session,
     excel_path: Path,
-    pfc_dir: Optional[Path] = None,
-    today: Optional[dt.date] = None,
+    pfc_dir: Path | None = None,
+    today: dt.date | None = None,
 ) -> ImportReport:
     """Befuellt eine leere Datenbank aus der Excel-Mockdatei (und optional PFC-Dateien).
 
@@ -586,53 +607,61 @@ def seed_database_from_excel(
         return ImportReport(warnings=[], already_seeded=True)
 
     today = today or dt.date.today()
-    now = dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
+    now = dt.datetime.now(dt.UTC).replace(tzinfo=None)
     current_year = today.year
-    all_warnings: List[str] = []
+    all_warnings: list[str] = []
 
     workbook = openpyxl.load_workbook(excel_path, data_only=True)
 
     position_seeds, w = read_portfolio_positions_from_excel(workbook, current_year)
     all_warnings += w
-    for seed in position_seeds:
+    for position_seed in position_seeds:
         session.add(
             PortfolioPosition(
-                as_of_date=today, year=seed.year, position_mwh=seed.position_mwh, source=SOURCE_LABEL
+                as_of_date=today,
+                year=position_seed.year,
+                position_mwh=position_seed.position_mwh,
+                source=SOURCE_LABEL,
             )
         )
 
     trade_seeds, w = read_intraday_trades_from_excel(workbook, current_year, today)
     all_warnings += w
-    for seed in trade_seeds:
+    for trade_seed in trade_seeds:
         session.add(
             IntradayTrade(
-                trade_date=seed.trade_date,
-                partner_alias=seed.partner_alias,
-                quantity_y0_mwh=seed.quantity_y0_mwh,
-                quantity_y1_mwh=seed.quantity_y1_mwh,
-                quantity_y2_mwh=seed.quantity_y2_mwh,
-                quantity_y3_mwh=seed.quantity_y3_mwh,
-                quantity_y4_mwh=seed.quantity_y4_mwh,
+                trade_date=trade_seed.trade_date,
+                partner_alias=trade_seed.partner_alias,
+                quantity_y0_mwh=trade_seed.quantity_y0_mwh,
+                quantity_y1_mwh=trade_seed.quantity_y1_mwh,
+                quantity_y2_mwh=trade_seed.quantity_y2_mwh,
+                quantity_y3_mwh=trade_seed.quantity_y3_mwh,
+                quantity_y4_mwh=trade_seed.quantity_y4_mwh,
                 source_type="manual",
                 last_modified_by=SOURCE_LABEL,
             )
         )
 
-    price_seeds, surcharge_seeds, w = read_market_prices_and_surcharges_from_excel(workbook, current_year)
+    price_seeds, surcharge_seeds, w = read_market_prices_and_surcharges_from_excel(
+        workbook, current_year
+    )
     all_warnings += w
-    for seed in price_seeds:
+    for price_seed in price_seeds:
         session.add(
             MarketPrice(
-                product_type=seed.product_type, delivery_year=seed.delivery_year,
-                price_eur_mwh=seed.price_eur_mwh, price_timestamp=now,
+                product_type=price_seed.product_type,
+                delivery_year=price_seed.delivery_year,
+                price_eur_mwh=price_seed.price_eur_mwh,
+                price_timestamp=now,
                 last_modified_by=SOURCE_LABEL,
             )
         )
-    for seed in surcharge_seeds:
+    for surcharge_seed in surcharge_seeds:
         session.add(
             OtcSurcharge(
-                product_type=seed.product_type, delivery_year=seed.delivery_year,
-                surcharge_eur_mwh=seed.surcharge_eur_mwh,
+                product_type=surcharge_seed.product_type,
+                delivery_year=surcharge_seed.delivery_year,
+                surcharge_eur_mwh=surcharge_seed.surcharge_eur_mwh,
                 last_modified_by=SOURCE_LABEL,
             )
         )
@@ -640,43 +669,51 @@ def seed_database_from_excel(
     settlement_seeds, w = read_settlement_prices_from_excel(workbook, current_year)
     all_warnings += w
     settlement_date = today - dt.timedelta(days=1)
-    for seed in settlement_seeds:
+    for settlement_seed in settlement_seeds:
         session.add(
             SettlementPrice(
-                product_type=seed.product_type, delivery_year=seed.delivery_year,
+                product_type=settlement_seed.product_type,
+                delivery_year=settlement_seed.delivery_year,
                 settlement_date=settlement_date,
-                settlement_price_eur_mwh=seed.settlement_price_eur_mwh,
+                settlement_price_eur_mwh=settlement_seed.settlement_price_eur_mwh,
                 settlement_timestamp=now,
             )
         )
 
     calendar_seeds, w = read_trading_calendar_from_excel(workbook, current_year, today)
     all_warnings += w
-    for seed in calendar_seeds:
+    for calendar_seed in calendar_seeds:
         session.add(
             TradingCalendarEntry(
-                due_date=seed.due_date, partner_alias=seed.partner_alias, direction=seed.direction,
-                quantity_y0_mwh=seed.quantity_y0_mwh, quantity_y1_mwh=seed.quantity_y1_mwh,
-                quantity_y2_mwh=seed.quantity_y2_mwh, quantity_y3_mwh=seed.quantity_y3_mwh,
-                quantity_y4_mwh=seed.quantity_y4_mwh, status="geplant",
+                due_date=calendar_seed.due_date,
+                partner_alias=calendar_seed.partner_alias,
+                direction=calendar_seed.direction,
+                quantity_y0_mwh=calendar_seed.quantity_y0_mwh,
+                quantity_y1_mwh=calendar_seed.quantity_y1_mwh,
+                quantity_y2_mwh=calendar_seed.quantity_y2_mwh,
+                quantity_y3_mwh=calendar_seed.quantity_y3_mwh,
+                quantity_y4_mwh=calendar_seed.quantity_y4_mwh,
+                status="geplant",
                 last_modified_by=SOURCE_LABEL,
             )
         )
 
     limit_order_seeds, w = read_limit_orders_from_excel(workbook, current_year)
     all_warnings += w
-    for seed in limit_order_seeds:
+    for limit_order_seed in limit_order_seeds:
         session.add(
             LimitOrder(
-                partner_alias=seed.partner_alias,
-                quantity_y0_mwh=seed.quantity_y0_mwh, quantity_y1_mwh=seed.quantity_y1_mwh,
-                quantity_y2_mwh=seed.quantity_y2_mwh, quantity_y3_mwh=seed.quantity_y3_mwh,
-                quantity_y4_mwh=seed.quantity_y4_mwh,
-                trigger_product_type=seed.trigger_product_type,
-                trigger_delivery_year=seed.trigger_delivery_year,
-                trigger_condition=seed.trigger_condition,
-                limit_price_eur_mwh=seed.limit_price_eur_mwh,
-                valid_until=seed.valid_until,
+                partner_alias=limit_order_seed.partner_alias,
+                quantity_y0_mwh=limit_order_seed.quantity_y0_mwh,
+                quantity_y1_mwh=limit_order_seed.quantity_y1_mwh,
+                quantity_y2_mwh=limit_order_seed.quantity_y2_mwh,
+                quantity_y3_mwh=limit_order_seed.quantity_y3_mwh,
+                quantity_y4_mwh=limit_order_seed.quantity_y4_mwh,
+                trigger_product_type=limit_order_seed.trigger_product_type,
+                trigger_delivery_year=limit_order_seed.trigger_delivery_year,
+                trigger_condition=limit_order_seed.trigger_condition,
+                limit_price_eur_mwh=limit_order_seed.limit_price_eur_mwh,
+                valid_until=limit_order_seed.valid_until,
                 status="offen",
                 last_modified_by=SOURCE_LABEL,
             )
@@ -685,11 +722,13 @@ def seed_database_from_excel(
     if pfc_dir is not None:
         pfc_seeds, w = read_pfc_checks_from_files(pfc_dir, current_year, today)
         all_warnings += w
-        for seed in pfc_seeds:
+        for pfc_seed in pfc_seeds:
             session.add(
                 PfcCheck(
-                    product_type=seed.product_type, delivery_year=seed.delivery_year,
-                    pfc_mean_eur_mwh=seed.pfc_mean_eur_mwh, pfc_file_timestamp=seed.pfc_file_timestamp,
+                    product_type=pfc_seed.product_type,
+                    delivery_year=pfc_seed.delivery_year,
+                    pfc_mean_eur_mwh=pfc_seed.pfc_mean_eur_mwh,
+                    pfc_file_timestamp=pfc_seed.pfc_file_timestamp,
                 )
             )
 

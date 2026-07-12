@@ -10,13 +10,21 @@ gibt es hier bewusst nicht (siehe 01_fachliche_funktionen.md, Abschnitt 6.2).
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
 from src.config import POSITION_LIMIT_MW
-from src.domain.position_logic import limit_status, simulated_position_mw, utilization_pct
-from src.domain.quantity_utils import interpret_quantities, mwh_to_mw, round_mw, round_mwh
+from src.domain.position_logic import (
+    limit_status,
+    simulated_position_mw,
+    utilization_pct,
+)
+from src.domain.quantity_utils import (
+    interpret_quantities,
+    mwh_to_mw,
+    round_mw,
+    round_mwh,
+)
 from src.domain.validation import at_least_one_nonzero
 from src.repositories.intraday_trade_repository import (
     add_intraday_trade as _repo_add_intraday_trade,
@@ -57,7 +65,9 @@ class IntradayTradeRow:
     last_modified_by: str
 
 
-def get_position_table(session: Session, today: Optional[dt.date] = None) -> List[PositionRow]:
+def get_position_table(
+    session: Session, today: dt.date | None = None
+) -> list[PositionRow]:
     """Berechnet die Positionstabelle fuer Y0 bis Y+4 (aktuelles Jahr automatisch bestimmt)."""
     today = today or dt.date.today()
     current_year = today.year
@@ -67,7 +77,7 @@ def get_position_table(session: Session, today: Optional[dt.date] = None) -> Lis
     intraday_sum_by_offset = _sum_intraday_quantities_by_offset(session)
 
     rows = []
-    for offset, year in zip(YEAR_OFFSETS, years):
+    for offset, year in zip(YEAR_OFFSETS, years, strict=False):
         pms_mw = mwh_to_mw(pms_by_year.get(year, 0.0), year)
         intraday_mw = mwh_to_mw(intraday_sum_by_offset[offset], year)
         simulated_mw = simulated_position_mw(pms_mw, intraday_mw)
@@ -97,7 +107,7 @@ def _sum_intraday_quantities_by_offset(session: Session) -> dict:
     return totals
 
 
-def get_intraday_trade_rows(session: Session) -> List[IntradayTradeRow]:
+def get_intraday_trade_rows(session: Session) -> list[IntradayTradeRow]:
     """Liefert alle untertaegigen Geschaefte inkl. Interpretation fuer die Anzeige.
 
     Die Interpretation wird ueber alle fuenf Jahresmengen hinweg gebildet
@@ -142,8 +152,8 @@ def add_intraday_trade(
     quantity_y4_mwh: float,
     username: str = "system",
     source_type: str = "manual",
-    source_id: Optional[int] = None,
-) -> List[str]:
+    source_id: int | None = None,
+) -> list[str]:
     """Validiert und speichert ein neues untertaegiges Geschaeft.
 
     ``username`` wird als letzter Bearbeiter gespeichert (Nachvollziehbarkeit).

@@ -14,7 +14,6 @@ davon, ob er bereits faellig ist (Nutzer trifft die finale Entscheidung).
 
 import datetime as dt
 from dataclasses import dataclass
-from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -57,8 +56,8 @@ class TradingCalendarRow:
 
 
 def get_visible_calendar_rows(
-    session: Session, today: Optional[dt.date] = None
-) -> List[TradingCalendarRow]:
+    session: Session, today: dt.date | None = None
+) -> list[TradingCalendarRow]:
     """Liefert alle nicht erledigten Kalendereintraege inkl. Faelligkeitsstatus."""
     today = today or dt.date.today()
     rows = []
@@ -94,7 +93,7 @@ def add_calendar_entry(
     quantity_y3_mwh: float,
     quantity_y4_mwh: float,
     username: str = "system",
-) -> List[str]:
+) -> list[str]:
     """Validiert und speichert einen neuen Handelskalendereintrag.
 
     ``username`` wird als letzter Bearbeiter gespeichert (Nachvollziehbarkeit).
@@ -130,7 +129,10 @@ def add_calendar_entry(
 
 
 def mark_done(
-    session: Session, entry_id: int, username: str = "system", today: Optional[dt.date] = None
+    session: Session,
+    entry_id: int,
+    username: str = "system",
+    today: dt.date | None = None,
 ) -> None:
     """Erzeugt ein untertaegiges Geschaeft aus dem Kalendereintrag und setzt ihn auf 'erledigt'.
 

@@ -4,8 +4,6 @@ Vorgabe: docs/specifications/01_fachliche_funktionen.md (Abschnitt 8.3).
 Reine Funktionen ohne Streamlit-/DB-Abhaengigkeit.
 """
 
-from typing import Optional
-
 
 def final_price(market_price_eur_mwh: float, otc_surcharge_eur_mwh: float) -> float:
     """Finaler Preis = Marktpreis + OTC-Aufschlag."""
@@ -13,8 +11,8 @@ def final_price(market_price_eur_mwh: float, otc_surcharge_eur_mwh: float) -> fl
 
 
 def settlement_difference(
-    final_price_eur_mwh: float, settlement_price_eur_mwh: Optional[float]
-) -> Optional[float]:
+    final_price_eur_mwh: float, settlement_price_eur_mwh: float | None
+) -> float | None:
     """Differenz = Finaler Preis - Settlement Vortag.
 
     Liefert None, falls kein Settlementpreis vorliegt (reine Anzeigelogik,
