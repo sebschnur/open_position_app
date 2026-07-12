@@ -98,8 +98,19 @@ python scripts/seed_from_excel.py --excel data/mockdaten.xlsm --pfc-dir data/pfc
 
 ## Git
 
-- Solo-Projekt, Commits liegen linear auf `main`.
-- **Achtung**: Die Git-Wurzel ist der uebergeordnete Ordner; diese App liegt
-  unter `open_position_app/`. Beim Stagen gezielt Projektpfade adressieren und
-  keine Nachbarordner mitnehmen.
+- Solo-Projekt, Commits liegen linear auf `main`. **Eigenes Repo**: Git-Wurzel ist
+  dieser App-Ordner selbst (seit 2026-07-12 aus dem uebergeordneten `projects/`-Repo
+  ausgelagert), Remote `origin` = GitHub `sebschnur/open_position_app`. Normales
+  `git add -A` ist sicher; keine Teilbaum-Sonderregeln mehr.
 - Vor Commits: Tests gruen und App bootet headless fehlerfrei.
+
+## Qualitaets-Gate (pre-commit)
+
+- Es gibt keine CI/CD - **pre-commit ist das Gate**. Setup: `pip install -r
+  requirements-dev.txt` und `pre-commit install`.
+- Hooks: Ruff (Lint+Format, line-length 88; `E501`/`UP038` bewusst ignoriert),
+  **mypy** ueber `mirrors-mypy` (isolierte Umgebung, Config aus `[tool.mypy]` in
+  `pyproject.toml`, prueft nur `src/`). Manuell: `pre-commit run --all-files`.
+- mypy-Hinweis: die isolierte mypy-Umgebung hat die Projekt-Dependencies **nicht**
+  installiert (`ignore_missing_imports = true` faengt das ab). Sollen DB-Typen echt
+  geprueft werden, `additional_dependencies` im mypy-Hook ergaenzen.
